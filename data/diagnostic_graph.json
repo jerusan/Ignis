@@ -85,7 +85,12 @@
           "type": "terminal",
           "fix": "Check for drafts \u2014 even a light breeze will blow away shielding gas and cause porosity. Use a welding screen. If welding outdoors, increase gas flow to 30 SCFH or more."
         }
-      }
+      },
+      "quick_tips": "Top causes by process: FLUX-CORED: (1) Wrong polarity \u2014 must be DCEN (ground to + socket, wire feed to - socket); (2) Shielding gas attached \u2014 flux-cored is self-shielded, remove gas; (3) Dirty base metal \u2014 wire brush/grind rust, paint, oil; (4) CTWD too long (max 1/2 inch), use 5-15 degree drag angle. MIG SOLID WIRE: (1) Gas not flowing \u2014 set 20-30 SCFH; (2) Wrong polarity \u2014 must be DCEP (ground to -, wire to +); (3) Nozzle clogged with spatter; (4) Drafts blowing away gas.",
+      "quick_tips_images": [
+        "dcen_polarity_p13",
+        "dcep_polarity_p14"
+      ]
     },
     "porosity_stick": {
       "root": "ps_1",
@@ -134,7 +139,9 @@
           "fix": "Use a 5\u201310\u00b0 drag angle and steady travel speed. Avoid stopping and restarting in the same spot. Re-striking on a cold crater can trap slag and cause porosity. Chip and wire-brush slag between passes.",
           "image_trigger": "stick_weld_diagnosis_p38"
         }
-      }
+      },
+      "quick_tips": "Top causes: (1) Damp/old electrodes \u2014 dry in oven at 250-300 F for 1-2 hours; (2) Arc too long \u2014 keep arc length equal to electrode core diameter; (3) Wrong polarity \u2014 most stick electrodes need DCEP (electrode to +, ground to -); (4) Heavy surface contamination.",
+      "quick_tips_images": []
     },
     "birds_nest": {
       "root": "bn_1",
@@ -184,7 +191,11 @@
           "fix": "Check spool brake tension. If the spool spins freely when you stop feeding, it will unravel and create a tangle. Tighten the spool knob (hub tension) until the spool stops promptly when the wire feed stops.",
           "image_trigger": "interior_controls_p9"
         }
-      }
+      },
+      "quick_tips": "Top cause: Excessive drive roll tension crushing soft wire. Correct tension: 2-3 for flux-cored wire, 3-5 for solid wire. Also check: gun liner not kinked or debris-filled, drive roll groove size matches wire diameter, idler arm fully locked, spool brake not too loose.",
+      "quick_tips_images": [
+        "interior_controls_p9"
+      ]
     },
     "wire_wont_feed": {
       "root": "wf_1",
@@ -254,7 +265,11 @@
           "fix": "Drive motor is receiving a trigger signal but not running. Check for debris in the drive mechanism. Inspect the gear and motor shaft for damage. The motor may need replacement \u2014 contact Harbor Freight service.",
           "image_trigger": "interior_controls_p9"
         }
-      }
+      },
+      "quick_tips": "Top causes: (1) Drive roll tension wrong \u2014 2-3 for flux-cored, 3-5 for solid wire; (2) Liner kinked or worn; (3) Contact tip clogged with spatter; (4) Wire spool tangled or spool brake too tight; (5) Drive motor fault.",
+      "quick_tips_images": [
+        "interior_controls_p9"
+      ]
     },
     "arc_wont_ignite": {
       "root": "ai_1",
@@ -303,7 +318,9 @@
           "fix": "Check that wire speed isn't set too low \u2014 minimum effective wire speed is around 100 IPM for most diameters. Also verify the correct process is selected on the display and the machine isn't in lock mode.",
           "image_trigger": "front_panel_p8"
         }
-      }
+      },
+      "quick_tips": "Top cause: Poor work clamp connection \u2014 clamp directly to bare metal on the workpiece, not on paint, rust, or the welding table clamp. Also check: wire stickout 1/4-1/2 inch (trim if too long); correct polarity (DCEP for MIG/Stick: ground to minus; DCEN for flux-cored/TIG: ground to plus); contact tip not worn out.",
+      "quick_tips_images": []
     },
     "machine_wont_start": {
       "root": "ms_1",
@@ -352,7 +369,9 @@
           "type": "terminal",
           "fix": "Test the outlet with a different device (lamp, phone charger). Check the power cord for cuts or damage. Confirm the power switch is fully in the ON position. If the outlet is dead and the breaker is fine, have the outlet tested by an electrician."
         }
-      }
+      },
+      "quick_tips": "Top cause: Tripped circuit breaker. Circuit requirements: 240V welding needs a dedicated 30A circuit; 120V needs a dedicated 20A circuit. Also check: voltage selector on power cord matches your outlet (120V vs 240V setting); power cord undamaged; power switch fully in ON position; thermal overload not tripped (wait 15-20 min).",
+      "quick_tips_images": []
     },
     "burn_through": {
       "root": "bt_1",
@@ -401,7 +420,11 @@
           "fix": "Burn-through on thick material (over 3/16\") usually means too-slow travel speed or excessive dwell time. Speed up. Also check for large gaps in fit-up and ensure you're not grinding the groove too deep before welding.",
           "image_trigger": "wire_penetration_p36"
         }
-      }
+      },
+      "quick_tips": "Top fixes: (1) Increase travel speed \u2014 keep moving, no pauses or wide weave; (2) Reduce wire speed (amperage) 15-20% and drop voltage one step; (3) Use thinnest wire available \u2014 0.023 inch for very thin material; (4) Ensure tight fit-up with no gaps; (5) Tack weld every 2-3 inches to distribute heat.",
+      "quick_tips_images": [
+        "wire_weld_diagnosis_p35"
+      ]
     },
     "excessive_spatter": {
       "root": "sp_1",
@@ -470,7 +493,11 @@
           "type": "terminal",
           "fix": "Check wire quality \u2014 cheap or rusty wire causes spatter. Also verify that you're using the correct wire type and shielding gas combination (C25 gas for mild steel, not pure CO2 which increases spatter)."
         }
-      }
+      },
+      "quick_tips": "Top cause: Wrong polarity. Flux-cored must be DCEN: ground to + socket, wire feed to - socket. MIG solid wire must be DCEP: ground to -, wire to +. If polarity is correct: increase voltage until arc sounds smooth (like frying bacon). Some spatter is normal with flux-cored wire.",
+      "quick_tips_images": [
+        "dcen_polarity_p13"
+      ]
     },
     "inadequate_penetration": {
       "root": "ip_1",
@@ -521,7 +548,12 @@
           "fix": "Check CTWD \u2014 keep it at 1/4 to 1/2 inch. Excessive stick-out reduces current density at the wire tip and lowers penetration. Also consider joint prep: a 60\u201370\u00b0 V-groove on thicker material improves access for the arc.",
           "image_trigger": "push_drag_angle_p22"
         }
-      }
+      },
+      "quick_tips": "Top fixes: (1) Check polarity \u2014 MIG/Stick need DCEP (ground to -, wire to +); (2) Slow down travel speed; (3) Increase wire speed (amperage); (4) Use 5-15 degree drag angle; (5) Keep CTWD at 1/4-1/2 inch.",
+      "quick_tips_images": [
+        "wire_penetration_p36",
+        "push_drag_angle_p22"
+      ]
     }
   }
 }

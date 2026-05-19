@@ -1,0 +1,194 @@
+[
+  {
+    "id": "spec_01",
+    "category": "spec",
+    "question": "What's the duty cycle for MIG welding at 200A on 240V?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "200A on 240V MIG has a 25% duty cycle — weld for 2.5 minutes, then rest for 7.5 minutes out of every 10. At 130A the duty cycle is 60%, and at 115A it's 100% (continuous).",
+    "key_numbers": ["25%", "200A", "240V"],
+    "requires_image": false
+  },
+  {
+    "id": "spec_02",
+    "category": "spec",
+    "question": "What's the duty cycle for TIG welding at 175A on 240V?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "175A on 240V TIG has a 30% duty cycle — 3 minutes on, 7 minutes rest. At 125A it's 60%, and at 105A it's 100% continuous. The maximum TIG amperage on 240V is 175A.",
+    "key_numbers": ["30%", "175A", "240V"],
+    "requires_image": false
+  },
+  {
+    "id": "spec_03",
+    "category": "spec",
+    "question": "What drive roll tension should I set for flux-cored wire?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "Set drive roll tension to 2–3 for flux-cored wire. Flux-cored wire is softer than solid wire and needs less tension. For solid wire, use 3–5.",
+    "key_numbers": ["2–3", "3–5"],
+    "requires_image": false
+  },
+  {
+    "id": "spec_04",
+    "category": "spec",
+    "question": "What gas flow rate should I use for TIG welding, and what type of gas?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "TIG welding requires 100% Argon — no CO2, no mixed gas. Set flow rate to 10–25 SCFH. For most TIG work, 15–20 SCFH is the sweet spot.",
+    "key_numbers": ["10–25 SCFH", "100% Argon"],
+    "requires_image": false
+  },
+  {
+    "id": "spec_05",
+    "category": "spec",
+    "question": "What is the maximum CTWD for MIG welding?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "Maximum CTWD (Contact Tip to Work Distance) is 1/2 inch (0.5 inch). Keep the contact tip within half an inch of the work surface for stable arc and good current transfer.",
+    "key_numbers": ["1/2 inch", "0.5 inch"],
+    "requires_image": false
+  },
+  {
+    "id": "spec_06",
+    "category": "spec",
+    "question": "What is the amperage range for Stick welding on 120V?",
+    "expected_tool_calls": ["get_machine_spec"],
+    "ground_truth": "On 120V, Stick welding range is 10–80A. The duty cycle is 40% at 80A (maximum), 60% at 70A, and 100% at 60A. For heavier Stick work, use 240V which goes up to 175A.",
+    "key_numbers": ["10–80A", "40%", "80A", "120V"],
+    "requires_image": false
+  },
+  {
+    "id": "diag_01",
+    "category": "diagnostic",
+    "question": "I'm getting porosity in my flux-cored welds — the weld looks full of tiny holes. What should I check?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Start with polarity: flux-cored requires DCEN (ground to positive socket, wire feed to negative socket). Wrong polarity is the #1 cause. Next: base metal must be clean — no rust, paint, oil. Do not use shielding gas with flux-cored wire. Check CTWD (max 1/2 inch) and use a 5–15° drag angle. Avoid welding in wind.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["dcen_polarity_p13"]
+  },
+  {
+    "id": "diag_02",
+    "category": "diagnostic",
+    "question": "I'm getting porosity in my MIG welds with solid wire and shielding gas. What's causing it?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Check: (1) gas cylinder open with 20–30 SCFH flow; (2) nozzle clear of spatter; (3) polarity is DCEP (ground to negative, wire to positive); (4) base metal clean — no rust, oil, paint; (5) no drafts/wind blowing away shielding gas.",
+    "key_numbers": ["20–30 SCFH"],
+    "requires_image": true,
+    "expected_image_ids": ["dcep_polarity_p14"]
+  },
+  {
+    "id": "diag_03",
+    "category": "diagnostic",
+    "question": "My wire is bird's nesting — tangling up at the drive rolls inside the machine. How do I fix it?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Reduce drive roll tension. For flux-cored use 2–3, for solid wire 3–5. Excessive tension crushes wire and causes tangling. Also check: liner clear of kinks/debris, drive roll groove matches wire diameter, idler arm fully locked down, spool brake not too loose.",
+    "key_numbers": ["2–3", "3–5"],
+    "requires_image": true,
+    "expected_image_ids": ["interior_controls_p9"]
+  },
+  {
+    "id": "diag_04",
+    "category": "diagnostic",
+    "question": "Wire feeds fine but the arc won't ignite when I pull the trigger and touch the workpiece.",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Most likely cause: poor work clamp connection. Move the ground clamp to bare metal directly on the workpiece — not on paint, rust, or the welding table clamp. Also check polarity is correct and wire stickout is 1/4–1/2 inch (trim if longer).",
+    "key_numbers": ["1/4–1/2 inch"],
+    "requires_image": false
+  },
+  {
+    "id": "diag_05",
+    "category": "diagnostic",
+    "question": "The machine won't power on at all — no display, no fan, nothing. What do I check?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Check the circuit breaker first — it may be tripped. For 240V welding: minimum 30A dedicated circuit. For 120V: 20A dedicated circuit. Test the outlet with another device. Check power cord for damage. Verify power switch is fully in the ON position.",
+    "key_numbers": ["30A", "20A"],
+    "requires_image": false
+  },
+  {
+    "id": "diag_06",
+    "category": "diagnostic",
+    "question": "I keep burning holes through the thin sheet metal I'm trying to weld. How do I stop the burn-through?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Increase travel speed — keep moving, no pauses or wide weave. Reduce wire speed (amperage) 15–20% and drop voltage one step. Use thinnest wire available (0.023\" for very thin material). Ensure tight fit-up with no gaps. Tack weld frequently to distribute heat.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["wire_weld_diagnosis_p35"]
+  },
+  {
+    "id": "diag_07",
+    "category": "diagnostic",
+    "question": "I'm getting massive spatter everywhere when welding with flux-cored wire. What's wrong?",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Wrong polarity is the #1 cause. Flux-cored requires DCEN: ground clamp to POSITIVE (+) socket, wire feed to NEGATIVE (−) socket. If polarity is correct, increase voltage until the arc sounds smooth and steady (like frying bacon). Some spatter is normal with flux-cored.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["dcen_polarity_p13"]
+  },
+  {
+    "id": "diag_08",
+    "category": "diagnostic",
+    "question": "My welds have poor penetration — the bead just sits on top of the metal like a rope, not fused in.",
+    "expected_tool_calls": ["diagnose_defect"],
+    "ground_truth": "Check polarity (DCEP for MIG: ground to −, wire to +). Slow down travel speed. Increase wire speed (amperage). Use 5–15° drag angle and ensure CTWD is 1/4–1/2 inch. The bead should wet out visibly to the sides of the joint.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["wire_penetration_p36", "push_drag_angle_p22"]
+  },
+  {
+    "id": "setup_01",
+    "category": "polarity_setup",
+    "question": "How do I set up the cables for TIG welding? Which socket does each cable go in?",
+    "expected_tool_calls": ["get_visual", "get_machine_spec"],
+    "ground_truth": "TIG uses DCEN. Ground clamp goes in the POSITIVE (+) socket. TIG torch goes in the NEGATIVE (−) socket. Foot pedal connects to the interior control socket inside the storage compartment. Shielding gas (100% Argon) connects to the rear gas inlet.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["tig_setup_p24"]
+  },
+  {
+    "id": "setup_02",
+    "category": "polarity_setup",
+    "question": "What polarity setup do I need for flux-cored welding? Which socket does the ground clamp go in?",
+    "expected_tool_calls": ["get_visual", "get_machine_spec"],
+    "ground_truth": "Flux-cored welding uses DCEN. Ground clamp goes in the POSITIVE (+) socket. Wire feed power cable goes in the NEGATIVE (−) socket. This is the opposite of MIG. Do NOT use shielding gas with flux-cored wire.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["dcen_polarity_p13"]
+  },
+  {
+    "id": "setup_03",
+    "category": "polarity_setup",
+    "question": "How do I set up for MIG welding with solid wire and shielding gas? Where do the cables go?",
+    "expected_tool_calls": ["get_visual", "get_machine_spec"],
+    "ground_truth": "MIG solid wire uses DCEP. Ground clamp goes in the NEGATIVE (−) socket. Wire feed power cable (MIG gun) goes in the POSITIVE (+) socket. Use C25 shielding gas (75% Argon/25% CO2) at 20–30 SCFH.",
+    "key_numbers": ["20–30 SCFH"],
+    "requires_image": true,
+    "expected_image_ids": ["dcep_polarity_p14"]
+  },
+  {
+    "id": "setup_04",
+    "category": "polarity_setup",
+    "question": "How do I set up for Stick welding? Which socket gets the electrode holder?",
+    "expected_tool_calls": ["get_visual", "get_machine_spec"],
+    "ground_truth": "Stick welding uses DCEP for most electrodes. Electrode holder (stinger) goes in the POSITIVE (+) socket. Ground clamp goes in the NEGATIVE (−) socket. No gas required.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["stick_setup_p27"]
+  },
+  {
+    "id": "setup_05",
+    "category": "polarity_setup",
+    "question": "Which socket does the TIG torch connect to — positive or negative?",
+    "expected_tool_calls": ["get_machine_spec", "get_visual"],
+    "ground_truth": "The TIG torch connects to the NEGATIVE (−) socket. TIG uses DCEN (Direct Current Electrode Negative), so the torch/electrode is negative and the ground clamp is in the positive socket.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["tig_setup_p24"]
+  },
+  {
+    "id": "setup_06",
+    "category": "polarity_setup",
+    "question": "Can you show me the front panel controls? What are all the knobs and buttons for?",
+    "expected_tool_calls": ["get_visual"],
+    "ground_truth": "The front panel has: Home button (returns to main screen), Back button, Left knob (secondary parameter), Main/center knob (primary setting — turn to adjust, press to enter menus), Right knob (fine adjust), LCD color display, MIG gun Eurofitting socket, Negative (−) socket, Positive (+) socket, Spool gun gas outlet, storage compartment door (houses foot pedal socket), and power switch.",
+    "key_numbers": [],
+    "requires_image": true,
+    "expected_image_ids": ["front_panel_p8"]
+  }
+]
