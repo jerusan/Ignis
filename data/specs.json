@@ -1,0 +1,161 @@
+{
+  "duty_cycles": [
+    {
+      "process": "MIG",
+      "voltage": "120V",
+      "pct_40": 100,
+      "pct_60": 85,
+      "pct_100": 75,
+      "range_min": 30,
+      "range_max": 140
+    },
+    {
+      "process": "MIG",
+      "voltage": "240V",
+      "pct_25": 200,
+      "pct_60": 130,
+      "pct_100": 115,
+      "range_min": 30,
+      "range_max": 220
+    },
+    {
+      "process": "flux_cored",
+      "voltage": "120V",
+      "pct_40": 100,
+      "pct_60": 85,
+      "pct_100": 75,
+      "range_min": 30,
+      "range_max": 140
+    },
+    {
+      "process": "flux_cored",
+      "voltage": "240V",
+      "pct_25": 200,
+      "pct_60": 130,
+      "pct_100": 115,
+      "range_min": 30,
+      "range_max": 220
+    },
+    {
+      "process": "TIG",
+      "voltage": "120V",
+      "pct_40": 125,
+      "pct_60": 105,
+      "pct_100": 90,
+      "range_min": 10,
+      "range_max": 125
+    },
+    {
+      "process": "TIG",
+      "voltage": "240V",
+      "pct_30": 175,
+      "pct_60": 125,
+      "pct_100": 105,
+      "range_min": 10,
+      "range_max": 175
+    },
+    {
+      "process": "Stick",
+      "voltage": "120V",
+      "pct_40": 80,
+      "pct_60": 70,
+      "pct_100": 60,
+      "range_min": 10,
+      "range_max": 80
+    },
+    {
+      "process": "Stick",
+      "voltage": "240V",
+      "pct_25": 175,
+      "pct_60": 115,
+      "pct_100": 100,
+      "range_min": 10,
+      "range_max": 175
+    }
+  ],
+  "polarity": [
+    {
+      "process": "MIG",
+      "mode": "DCEP",
+      "description": "Direct Current Electrode Positive",
+      "ground_socket": "negative (\u2212)",
+      "wire_socket": "positive (+)",
+      "gas_required": true,
+      "gas_type": "C25 (75% Argon / 25% CO2) or stainless tri-mix",
+      "image_id": "dcep_polarity_p14"
+    },
+    {
+      "process": "flux_cored",
+      "mode": "DCEN",
+      "description": "Direct Current Electrode Negative (gasless)",
+      "ground_socket": "positive (+)",
+      "wire_socket": "negative (\u2212)",
+      "gas_required": false,
+      "note": "Self-shielded flux-cored \u2014 do NOT use shielding gas",
+      "image_id": "dcen_polarity_p13"
+    },
+    {
+      "process": "TIG",
+      "mode": "DCEN",
+      "description": "Direct Current Electrode Negative",
+      "ground_socket": "positive (+)",
+      "torch_socket": "negative (\u2212)",
+      "foot_pedal_socket": "interior control socket",
+      "gas_required": true,
+      "gas_type": "100% Argon",
+      "image_id": "tig_setup_p24"
+    },
+    {
+      "process": "Stick",
+      "mode": "DCEP",
+      "description": "Direct Current Electrode Positive (most electrodes)",
+      "ground_socket": "negative (\u2212)",
+      "electrode_socket": "positive (+)",
+      "gas_required": false,
+      "note": "Some specialty electrodes use DCEN \u2014 check electrode packaging",
+      "image_id": "stick_setup_p27"
+    }
+  ],
+  "wire_settings": {
+    "drive_roll_tension_solid_wire": "3\u20135 (scale on idler arm)",
+    "drive_roll_tension_flux_cored": "2\u20133 (softer wire \u2014 less tension needed)",
+    "solid_wire_sizes": [
+      "0.025\"",
+      "0.030\"",
+      "0.035\""
+    ],
+    "flux_cored_sizes": [
+      "0.030\"",
+      "0.035\"",
+      "0.045\""
+    ],
+    "ctwd_max_inches": 0.5,
+    "ctwd_description": "Contact tip to work distance \u2014 tip of contact tip to base metal surface",
+    "stickout_inches": 0.5,
+    "stickout_description": "Wire extending beyond end of contact tip"
+  },
+  "gas_settings": {
+    "MIG": {
+      "flow_scfh_min": 20,
+      "flow_scfh_max": 30,
+      "type": "C25 (75% Argon / 25% CO2) for mild steel; stainless tri-mix for stainless"
+    },
+    "TIG": {
+      "flow_scfh_min": 10,
+      "flow_scfh_max": 25,
+      "type": "100% Argon \u2014 no CO2 or mixed gas"
+    }
+  },
+  "input_power": {
+    "120V": {
+      "input_current_rated": "20A",
+      "breaker_minimum": "20A dedicated circuit",
+      "plug_type": "NEMA 5-20P"
+    },
+    "240V": {
+      "input_current_rated": "27A",
+      "breaker_minimum": "30A",
+      "plug_type": "NEMA 6-50P"
+    }
+  }
+}
