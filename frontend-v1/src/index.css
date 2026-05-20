@@ -1,0 +1,122 @@
+/* --- MANAGED FONT IMPORTS START (do not edit manually) --- */
+/* INTERNAL USE NAME: Heading */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+/* INTERNAL USE NAME: Mono */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* --- MANAGED FONT IMPORTS END --- */
+
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+:root {
+  --primary: oklch(0.45 0.2 250);
+  --primary-hover: oklch(0.4 0.2 250);
+  --primary-elevated: oklch(0.5 0.2 250);
+  --secondary: oklch(0.62 0.18 40);
+  --secondary-hover: oklch(0.56 0.18 40);
+  --secondary-elevated: oklch(0.68 0.18 40);
+  --tertiary: oklch(0.7 0.12 180);
+  --tertiary-hover: oklch(0.64 0.12 180);
+  --tertiary-elevated: oklch(0.75 0.12 180);
+  --foreground: oklch(0.15 0.01 250);
+  --foreground-muted: oklch(0.45 0.02 250);
+  --foreground-subtle: oklch(0.65 0.01 250);
+  --background: oklch(0.98 0.01 250);
+  --background-muted: oklch(0.95 0.01 250);
+  --background-subtle: oklch(0.92 0.01 250);
+  --success: oklch(0.55 0.15 150);
+  --success-hover: oklch(0.5 0.15 150);
+  --success-elevated: oklch(0.6 0.15 150);
+  --warning: oklch(0.62 0.18 60);
+  --warning-hover: oklch(0.56 0.18 60);
+  --warning-elevated: oklch(0.68 0.18 60);
+  --error: oklch(0.48 0.18 15);
+  --error-hover: oklch(0.42 0.18 15);
+  --error-elevated: oklch(0.54 0.18 15);
+  --info: oklch(0.52 0.16 240);
+  --info-hover: oklch(0.46 0.16 240);
+  --info-elevated: oklch(0.58 0.16 240);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.08);
+  --shadow-md: 0 4px 12px rgba(15,23,42,0.12);
+  --shadow-lg: 0 12px 24px rgba(15,23,42,0.15);
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+.prose-ignis {
+  max-width: 100%;
+}
+
+.prose-ignis > :first-child {
+  margin-top: 0;
+}
+
+.prose-ignis > :last-child {
+  margin-bottom: 0;
+}
+
+.prose-ignis p,
+.prose-ignis ul,
+.prose-ignis ol {
+  margin: 0 0 0.75rem;
+}
+
+.prose-ignis ul,
+.prose-ignis ol {
+  padding-left: 1.25rem;
+}
+
+.prose-ignis li + li {
+  margin-top: 0.25rem;
+}
+
+.prose-ignis a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-ignis code {
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--background-subtle), transparent 25%);
+  padding: 0.05rem 0.25rem;
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82em;
+}
+
+.prose-ignis pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.75rem;
+}
+
+.prose-ignis pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.prose-ignis img {
+  max-width: min(100%, 720px);
+  max-height: 420px;
+  border-radius: 8px;
+  border: 1px solid var(--background-subtle);
+  background: var(--background);
+  object-fit: contain;
+}
