@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIcon,
-  GaugeIcon,
-  ShieldCheckIcon,
-  WrenchIcon
+  GaugeIcon
 } from 'lucide-react';
 import ChatPane, {
   ChatMessage,
@@ -92,9 +90,7 @@ function markToolDone(
 function EmptyState({ onPrompt }: { onPrompt: (prompt: string) => void }) {
   return (
     <div className="max-w-2xl px-4 text-left">
-      <div className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-sm">
-        <WrenchIcon className="h-5 w-5" />
-      </div>
+      <img src="/ignis-logo.svg" alt="Ignis" className="mb-5 h-10 w-auto" />
       <h2 className="font-heading text-2xl font-semibold text-foreground">
         Ignis technician console
       </h2>
@@ -276,17 +272,10 @@ export function IgnisApp() {
       <header className="border-b border-background-subtle bg-background">
         <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-sm">
-              <ShieldCheckIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="font-heading text-base font-semibold text-foreground">
-                Ignis
-              </h1>
-              <p className="text-xs text-foreground-muted">
-                Vulcan OmniPro 220 technician assistant
-              </p>
-            </div>
+            <img src="/ignis-logo.svg" alt="Ignis" className="h-8 w-auto" />
+            <p className="text-xs text-foreground-muted">
+              Vulcan OmniPro 220 · technician assistant
+            </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-xs md:w-auto">
