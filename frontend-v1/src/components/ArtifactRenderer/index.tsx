@@ -5,8 +5,10 @@ import {
   AlertTriangleIcon,
   RefreshCwIcon } from
 'lucide-react';
-export type ArtifactType = 'react' | 'svg' | 'html';
+import { useWorkbench } from '../WorkbenchOverlay';
+export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist';
 export interface ArtifactRendererProps {
+  id?: string;
   type: ArtifactType;
   title: string;
   code: string;
@@ -49,6 +51,7 @@ SCRIPT_OPEN +
 SCRIPT_CLOSE +
 '</body></html>';
 function ArtifactRenderer({
+  id,
   type,
   title,
   code,
@@ -59,6 +62,20 @@ function ArtifactRenderer({
   const [view, setView] = useState<'preview' | 'code'>(defaultView);
   const [error, setError] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
+  const { addPinnedArtifact, pinnedArtifacts } = useWorkbench();
+  const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
+
+  // Checklist artifacts render in the Workbench panel (LeftZone).
+  // Show a compact reference card here so the user knows where to find it.
+  if (type === 'checklist') {
+    return (
+      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 w-full">
+        <span className="text-[9px] font-mono uppercase tracking-widest text-amber-500 flex-shrink-0">checklist</span>
+        <span className="text-sm text-foreground truncate flex-1">{title}</span>
+        <span className="text-[10px] text-foreground-muted font-mono flex-shrink-0">→ Workbench</span>
+      </div>
+    );
+  }
   const isHtmlLike = type === 'svg' || type === 'html';
   useEffect(() => {
     if (isHtmlLike) return;
@@ -119,6 +136,20 @@ function ArtifactRenderer({
               Code
             </button>
           </div>
+          {id && (
+            <button
+              type="button"
+              onClick={() => addPinnedArtifact({ id, type, title, code })}
+              disabled={isPinned}
+              className={`p-1 rounded hover:bg-background-subtle text-foreground-muted ${isPinned ? 'opacity-40 cursor-not-allowed' : ''}`}
+              aria-label={isPinned ? 'Already pinned' : 'Pin to workbench'}
+              title={isPinned ? 'Already pinned' : 'Pin to workbench'}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill={isPinned ? 'currentColor' : 'none'}
+                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 1h5v4.5l2 2.5H2.5l2-2.5V1zM7 8v5" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -128,7 +159,7 @@ function ArtifactRenderer({
             className="p-1 rounded hover:bg-background-subtle text-foreground-muted"
             aria-label="Re-render"
             title="Re-render">
-            
+
             <RefreshCwIcon className="w-3.5 h-3.5" />
           </button>
         </div>

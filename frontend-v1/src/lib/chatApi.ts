@@ -3,6 +3,14 @@ export interface ApiMessage {
   content: string;
 }
 
+export interface SessionState {
+  process: string | null;
+  voltage: string | null;
+  material: string | null;
+  thickness: string | null;
+  wire_size: string | null;
+}
+
 export type ChatStreamEvent =
   | {
       type: 'text_delta';
@@ -22,6 +30,7 @@ export type ChatStreamEvent =
       type: 'done';
       input_tokens: number;
       output_tokens: number;
+      session_context?: SessionState;
     };
 
 export interface ChatRequest {
@@ -65,7 +74,10 @@ function normalizeEvent(value: unknown): ChatStreamEvent | null {
       input_tokens:
         typeof value.input_tokens === 'number' ? value.input_tokens : 0,
       output_tokens:
-        typeof value.output_tokens === 'number' ? value.output_tokens : 0
+        typeof value.output_tokens === 'number' ? value.output_tokens : 0,
+      session_context: isRecord(value.session_context)
+        ? (value.session_context as unknown as SessionState)
+        : undefined
     };
   }
 
@@ -93,6 +105,20 @@ function parseSseEvents(buffer: string): {
   }
 
   return { events, rest };
+}
+
+/** Fire-and-forget telemetry for checklist step completion. Fails silently. */
+export function silentChecklistStep(
+  sessionId: string,
+  stepId: string,
+  stepText: string
+): void {
+  fetch('/step_complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, step_id: stepId, step_text: stepText }),
+    signal: AbortSignal.timeout(3000),
+  }).catch(() => { /* intentionally silent */ });
 }
 
 export async function* streamChat({
