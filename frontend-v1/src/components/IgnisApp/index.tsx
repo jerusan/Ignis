@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SettingsIcon } from 'lucide-react';
 import ChatPane, {
   ChatMessage,
   ChatToolCall
@@ -120,7 +121,7 @@ export function IgnisApp() {
   const history = useRef<ApiMessage[]>([]);
   const {
     setArtifacts, setSpatialContext, setSessionState, addTurn,
-    registerSendMessage, setActiveChecklist, open, registerSessionId,
+    registerSendMessage, setActiveChecklist, toggleOpen, isOpen, registerSessionId,
   } = useWorkbench();
 
   // Sync all assistant artifacts into context (for backward compat)
@@ -258,7 +259,6 @@ export function IgnisApp() {
         const checklist = finalArtifacts.find(a => a.type === 'checklist');
         if (checklist) {
           setActiveChecklist(checklist);
-          open();
         }
         addTurn({
           id: `turn_${Date.now()}`,
@@ -274,7 +274,7 @@ export function IgnisApp() {
         setIsStreaming(false);
       }
     },
-    [isStreaming, setSpatialContext, setSessionState, addTurn, setActiveChecklist, open]
+    [isStreaming, setSpatialContext, setSessionState, addTurn, setActiveChecklist]
   );
 
   useEffect(() => {
@@ -293,6 +293,19 @@ export function IgnisApp() {
           <p className="text-xs text-foreground-muted">
             Vulcan OmniPro 220 · technician assistant
           </p>
+          <button
+            onClick={toggleOpen}
+            title={isOpen ? 'Close workbench' : 'Open workbench'}
+            aria-label={isOpen ? 'Close workbench panel' : 'Open workbench panel'}
+            aria-expanded={isOpen}
+            className={`ml-auto w-9 h-9 flex items-center justify-center rounded-md transition-colors ${
+              isOpen
+                ? 'bg-background-muted text-foreground border border-background-subtle'
+                : 'text-foreground-muted hover:text-foreground hover:bg-background-muted'
+            }`}
+          >
+            <SettingsIcon className="w-4 h-4" />
+          </button>
         </div>
       </header>
 

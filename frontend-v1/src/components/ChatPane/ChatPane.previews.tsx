@@ -120,10 +120,55 @@ const streamingConversation: ChatMessage[] = [
 
 }];
 
+const spatialConversation: ChatMessage[] = [
+  {
+    id: 's1',
+    role: 'user',
+    text: 'Show me the wire feed setup for flux-cored.',
+    timestamp: '3:00 PM',
+  },
+  {
+    id: 's2',
+    role: 'assistant',
+    text: 'For flux-cored wire feed, start by setting the correct polarity. Flux-cored (self-shielded) runs **DCEN** — electrode negative.',
+    timestamp: '3:00 PM',
+    spatialContext: {
+      view: 'front',
+      highlights: ['negative_socket', 'positive_socket'],
+      draw_path: true,
+    },
+  },
+  {
+    id: 's3',
+    role: 'user',
+    text: 'Done with polarity. Next?',
+    timestamp: '3:01 PM',
+  },
+  {
+    id: 's4',
+    role: 'assistant',
+    text: 'Good. Now open the side panel and set the **idler arm tension**. Press the arm down, thread the wire through the inlet liner, then set the feed tensioner to about 3–4 on the scale.',
+    timestamp: '3:01 PM',
+    spatialContext: {
+      view: 'interior',
+      highlights: ['idler_arm', 'feed_tensioner', 'wire_inlet_liner'],
+    },
+  },
+];
+
 const previews: ComponentPreviewModule = {
   componentName: 'ChatPane',
   importPath: 'components/ChatPane',
   previews: [
+  {
+    name: 'Inline machine visuals',
+    description:
+      'Two-step procedure with embedded SpatialViewport highlights and step thumbnails.',
+    render: () =>
+      <div className="h-[700px] border border-background-subtle rounded-lg overflow-hidden">
+        <ChatPane messages={spatialConversation} onSend={() => {}} onVoiceToggle={() => {}} />
+      </div>,
+  },
   {
     name: 'Full conversation',
     description:
