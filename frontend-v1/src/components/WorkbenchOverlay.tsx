@@ -13,19 +13,27 @@ import React, {
     useEffect,
     useState,
 } from 'react';
+import type { ChatArtifact } from './ChatPane';
 import {
-    SpatialViewport,
+    MachineView,
+    REGISTRY_BY_VIEW,
     SpatialControlPoint,
-    WELDER_CONSOLE_REGISTRY,
+    SpatialViewport,
     WelderTelemetry,
 } from './SpatialViewport';
-import type { ChatArtifact } from './ChatPane';
 
 // ── Re-export so consumers can import from one place ──────────────────────────
 export type { WelderTelemetry };
 
-// ── Registry export formatter (mirrors App.tsx helper) ────────────────────────
-function fmtRegistry(draft: Record<string, SpatialControlPoint>): string {
+// ── Registry export formatter ─────────────────────────────────────────────────
+const VIEW_CONST_NAME: Record<MachineView, string> = {
+    front:    'WELDER_FRONT_REGISTRY',
+    interior: 'WELDER_INTERIOR_REGISTRY',
+    back:     'WELDER_REAR_REGISTRY',
+};
+
+function fmtRegistry(view: MachineView, draft: Record<string, SpatialControlPoint>): string {
+    const constName = VIEW_CONST_NAME[view];
     const entries = Object.entries(draft).map(([key, pt]) => {
         const desc  = pt.desc.replace(/"/g, '\\"');
         const title = pt.title.replace(/"/g, '\\"');
@@ -39,7 +47,7 @@ function fmtRegistry(draft: Record<string, SpatialControlPoint>): string {
             `    }`,
         ].join('\n');
     });
-    return `export const WELDER_CONSOLE_REGISTRY: Record<string, SpatialControlPoint> = {\n${entries.join(',\n')}\n};`;
+    return `export const ${constName}: Record<string, SpatialControlPoint> = {\n${entries.join(',\n')}\n};`;
 }
 
 // ── Context ────────────────────────────────────────────────────────────────────
@@ -143,24 +151,46 @@ function MiniExportPanel({ code, onDismiss }: { code: string; onDismiss: () => v
 export function WorkbenchOverlay() {
     const { isOpen, isPinned, telemetry, open, close, togglePin } = useWorkbench();
 
-    // Self-contained viewport state — decoupled from the sidebar's SpatialViewport
-    const [registry,     setRegistry]     = useState<Record<string, SpatialControlPoint>>(
-        () => ({ ...WELDER_CONSOLE_REGISTRY })
+    // Self-contained viewport state — decoupled from any external SpatialViewport
+    const [registries, setRegistries] = useState<Record<MachineView, Record<string, SpatialControlPoint>>>(
+        () => ({
+            front:    { ...REGISTRY_BY_VIEW.front },
+            interior: { ...REGISTRY_BY_VIEW.interior },
+            back:     { ...REGISTRY_BY_VIEW.back },
+        })
     );
+    const [activeView,   setActiveView]   = useState<MachineView>('front');
     const [activeTarget, setActiveTarget] = useState<string | undefined>('lcd_display');
     const [isModifyMode, setIsModifyMode] = useState(false);
     const [exportCode,   setExportCode]   = useState<string | null>(null);
+
+    // Derived — single source of truth for the current-view registry
+    const registry = registries[activeView];
+
+    // Labels and subtitle
+    const VIEW_LABEL: Record<MachineView, string> = {
+        front:    'Front Console',
+        interior: 'Internal Cabinet',
+        back:     'Rear Panel',
+    };
 
     const handleToggleModify = useCallback(() => {
         setIsModifyMode(m => { if (!m) setExportCode(null); return !m; });
     }, []);
 
+    const handleViewChange = useCallback((view: MachineView) => {
+        if (isModifyMode) return;   // guard: never switch mid-edit
+        setActiveView(view);
+        setActiveTarget(undefined);
+        setExportCode(null);
+    }, [isModifyMode]);
+
     const handleSave = useCallback((draft: Record<string, SpatialControlPoint>) => {
-        setRegistry({ ...draft });
+        setRegistries(prev => ({ ...prev, [activeView]: { ...draft } }));
         setIsModifyMode(false);
-        setExportCode(fmtRegistry(draft));
+        setExportCode(fmtRegistry(activeView, draft));
         setActiveTarget(prev => (prev && draft[prev] ? prev : undefined));
-    }, []);
+    }, [activeView]);
 
     const handleDiscard = useCallback(() => setIsModifyMode(false), []);
 
@@ -247,7 +277,7 @@ export function WorkbenchOverlay() {
             {/* ── Overlay panel ─────────────────────────────────────────────────── */}
             <div
                 role="dialog"
-                aria-label="Garage Workbench — Vulcan Front Console"
+                aria-label={`Garage Workbench — Vulcan OmniPro 220 ${VIEW_LABEL[activeView]}`}
                 aria-modal={!isPinned}
                 style={panelStyle}
                 className="
@@ -273,7 +303,7 @@ export function WorkbenchOverlay() {
                                 Garage Workbench
                             </div>
                             <div className="text-[9px] font-mono text-zinc-600 mt-0.5">
-                                Vulcan OmniPro 220 — Front Console
+                                Vulcan OmniPro 220 — {VIEW_LABEL[activeView]}
                             </div>
                         </div>
                     </div>
@@ -325,6 +355,33 @@ export function WorkbenchOverlay() {
                     </div>
                 </div>
 
+                {/* ─ View Switcher ────────────────────────────────────────────── */}
+                <div className="flex-shrink-0 flex items-center gap-1 px-3 py-2 border-b border-zinc-800/60 bg-zinc-900/20">
+                    {(
+                        [
+                            { view: 'front'    as MachineView, label: 'Front Console'    },
+                            { view: 'interior' as MachineView, label: 'Internal Cabinet' },
+                            { view: 'back'     as MachineView, label: 'Rear Panel'       },
+                        ]
+                    ).map(({ view, label }) => (
+                        <button
+                            key={view}
+                            onClick={() => handleViewChange(view)}
+                            disabled={isModifyMode}
+                            className={`
+                                flex-1 text-[9px] font-mono font-semibold
+                                px-2 py-1.5 rounded-lg border
+                                transition-all truncate
+                                ${activeView === view
+                                    ? 'bg-orange-500/15 border-orange-500/40 text-orange-400'
+                                    : 'border-transparent text-zinc-500 hover:text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed'}
+                            `}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* ─ Scrollable body ──────────────────────────────────────────── */}
                 <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
 
@@ -333,6 +390,7 @@ export function WorkbenchOverlay() {
                         <SpatialViewport
                             activeComponent={isModifyMode ? undefined : activeTarget}
                             registry={registry}
+                            currentView={activeView}
                             isModifyMode={isModifyMode}
                             isOverlay
                             telemetry={telemetry}
