@@ -10,6 +10,7 @@ import ChatPane, {
 import DebugPanel, { DebugTurn } from '../DebugPanel';
 import { parseArtifacts } from '../../lib/artifacts';
 import { ApiMessage, streamChat } from '../../lib/chatApi';
+import { useWorkbench } from '../WorkbenchOverlay';
 
 const INPUT_COST_PER_TOKEN = 3 / 1_000_000;
 const OUTPUT_COST_PER_TOKEN = 15 / 1_000_000;
@@ -123,6 +124,14 @@ export function IgnisApp() {
   const [isStreaming, setIsStreaming] = useState(false);
   const sessionId = useRef(makeId('session'));
   const history = useRef<ApiMessage[]>([]);
+  const { setArtifacts } = useWorkbench();
+
+  useEffect(() => {
+    const all = messages
+      .filter(m => m.role === 'assistant')
+      .flatMap(m => m.artifacts ?? []);
+    setArtifacts(all);
+  }, [messages, setArtifacts]);
 
   useEffect(() => {
     const handleOnline = () => setOffline(false);

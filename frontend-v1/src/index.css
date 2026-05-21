@@ -123,3 +123,82 @@
   background: var(--background);
   object-fit: contain;
 }
+/* Base Micro-Animations Matrix Engine */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.96) translateY(4px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+@keyframes pulseGlow {
+  0% { 
+    transform: scale(1); 
+    opacity: 0.8; 
+    stroke-width: 2px;
+  }
+  50% { 
+    transform: scale(1.25); 
+    opacity: 0.2; 
+    stroke-width: 4px;
+  }
+  100% { 
+    transform: scale(1); 
+    opacity: 0.8; 
+    stroke-width: 2px;
+  }
+}
+
+/* Global Scope Utility Class Rules */
+.animate-fade-in {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.dash-array-2 {
+  stroke-dasharray: 6, 4;
+}
+
+/* High-Contrast Interactive Annotation Sights Styling */
+svg [pointer-events="auto"] {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+/* Non-Selected Sights Outer Tracker ( суб-активные метки ) */
+svg g:not(.animate-fade-in) circle[data-testid="reticle-ring"] {
+  stroke: #f97316 !important; /* Safety Orange */
+  stroke-width: 2.5px;
+  fill: #09090b / 0.75; /* Opaque Zinc Backing under crosshairs */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
+}
+
+/* Active Locked Reticle Radar Ring Wave overrides */
+circle[data-testid="radar-ring"] {
+  animation: pulseGlow 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  stroke: #ea580c !important; /* Deep Warning Burn Orange */
+}
+
+/* Absolute Vector Crosshair Center Point Core */
+circle[data-testid="center-dot"] {
+  fill: #ffffff !important; /* Pure white center dot always cuts through dark images */
+  stroke: #ea580c !important;
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 4px #f97316);
+}
+
+/* HUD Leader Connector Line Segment */
+svg line {
+  stroke: #ea580c !important;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* HTML Telemetry Callout Container Panel Drop Shadows */
+foreignObject {
+  overflow: visible; /* Prevents container box clipping shadow boundaries */
+  filter: drop-shadow(0 20px 25px rgba(0, 0, 0, 0.85)) 
+          drop-shadow(0 0 12px rgba(234, 88, 12, 0.15));
+}
