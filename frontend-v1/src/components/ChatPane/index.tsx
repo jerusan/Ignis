@@ -13,10 +13,12 @@ import {
   parseArtifacts,
   stripArtifacts,
   stripSpatialContext,
+  stripStreamingTags,
   parseReferenceImages,
   stripReferenceImages,
   type ReferenceImage,
   type SpatialContextTag,
+  type PendingArtifact,
 } from '../../lib/artifacts';
 
 export interface ChatArtifact {
@@ -81,6 +83,29 @@ function ReferenceImages({ images }: { images: ReferenceImage[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ArtifactBuilding({ type, title }: PendingArtifact) {
+  const label = title ? `Building ${title}` : type ? `Building ${type} artifact` : 'Building artifact';
+  return (
+    <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-background-subtle bg-background-muted w-full">
+      {type && type !== 'spatial' && (
+        <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/20 text-primary flex-shrink-0">
+          {type}
+        </span>
+      )}
+      <span className="text-sm text-foreground-muted truncate">{label}</span>
+      <div className="flex gap-1 ml-auto flex-shrink-0">
+        {[0, 150, 300].map(delay => (
+          <span
+            key={delay}
+            className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce"
+            style={{ animationDelay: `${delay}ms` }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -172,8 +197,17 @@ function ChatPane({
           </div>
         ) : (
           messages.map((m, msgIdx) => {
+            // During streaming, strip any partial/incomplete special tags and
+            // capture metadata so we can show a building animation in their place.
+            const streamText =
+              m.streaming && m.role === 'assistant'
+                ? stripStreamingTags(m.text)
+                : null;
+            const pendingArtifact = streamText?.pending ?? null;
+            const textForParsing = streamText?.clean ?? m.text;
+
             const parsedArtifacts =
-              m.role === 'assistant' ? parseArtifacts(m.text) : [];
+              m.role === 'assistant' ? parseArtifacts(textForParsing) : [];
             const artifacts =
               m.artifacts && m.artifacts.length > 0
                 ? m.artifacts
@@ -181,7 +215,7 @@ function ChatPane({
 
             const baseText =
               m.role === 'assistant'
-                ? stripSpatialContext(stripArtifacts(m.text))
+                ? stripSpatialContext(stripArtifacts(textForParsing))
                 : m.text;
             const referenceImages =
               m.role === 'assistant' && artifacts.length > 0
@@ -262,7 +296,14 @@ function ChatPane({
                   </div>
                 )}
 
-                {/* Artifacts */}
+                {/* Building animation — shown while the artifact tag is still streaming */}
+                {m.role === 'assistant' && pendingArtifact && (
+                  <div className="pl-11">
+                    <ArtifactBuilding {...pendingArtifact} />
+                  </div>
+                )}
+
+                {/* Artifacts — shown once the closing tag has been received */}
                 {m.role === 'assistant' && artifacts.length > 0 && (
                   <div className="pl-11 space-y-3">
                     {artifacts.map(a => (

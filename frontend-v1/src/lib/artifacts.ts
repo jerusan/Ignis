@@ -43,6 +43,55 @@ export function stripArtifacts(text: string): string {
   return text.replace(ARTIFACT_PATTERN, '').trim();
 }
 
+// ── Streaming tag suppression ──────────────────────────────────────────────────
+
+export interface PendingArtifact {
+  type?: string;
+  title?: string;
+}
+
+/**
+ * During streaming, the model may emit an opening <artifact> or <spatial> tag
+ * before the closing tag arrives. This function detects that and returns the
+ * safe-to-display prefix plus metadata about what's being built, so the UI can
+ * show a building animation instead of raw XML.
+ *
+ * Call this BEFORE stripArtifacts / stripSpatialContext — those only handle
+ * complete tags; this handles the in-flight partial one.
+ */
+export function stripStreamingTags(text: string): {
+  clean: string;
+  pending: PendingArtifact | null;
+} {
+  // Incomplete artifact tag: <artifact ... > ... (no </artifact> yet)
+  const artifactOpen = text.lastIndexOf('<artifact');
+  if (artifactOpen !== -1) {
+    const afterOpen = text.slice(artifactOpen);
+    if (!afterOpen.includes('</artifact>')) {
+      const typeMatch = /type="([^"]*)"/.exec(afterOpen);
+      const titleMatch = /title="([^"]*)"/.exec(afterOpen);
+      return {
+        clean: text.slice(0, artifactOpen).trim(),
+        pending: { type: typeMatch?.[1], title: titleMatch?.[1] },
+      };
+    }
+  }
+
+  // Incomplete spatial tag: <spatial ... (no /> yet)
+  const spatialOpen = text.lastIndexOf('<spatial');
+  if (spatialOpen !== -1) {
+    const afterOpen = text.slice(spatialOpen);
+    if (!afterOpen.includes('/>') && !afterOpen.includes('</spatial>')) {
+      return {
+        clean: text.slice(0, spatialOpen).trim(),
+        pending: { type: 'spatial' },
+      };
+    }
+  }
+
+  return { clean: text, pending: null };
+}
+
 // ── Spatial context ────────────────────────────────────────────────────────────
 
 export interface SpatialContextTag {

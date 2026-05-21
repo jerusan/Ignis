@@ -117,8 +117,25 @@ const streamingConversation: ChatMessage[] = [
       process: 'flux-cored'
     }
   }]
-
 }];
+
+// Simulates a message mid-stream where the agent has started emitting an
+// artifact tag but hasn't closed it yet — should show the building animation.
+const streamingArtifactConversation: ChatMessage[] = [
+  {
+    id: 'sa1',
+    role: 'user',
+    text: "Show me a duty cycle calculator for MIG at 240V.",
+    timestamp: '3:10 PM',
+  },
+  {
+    id: 'sa2',
+    role: 'assistant',
+    text: 'Here\'s an interactive calculator based on the spec table.\n\n<artifact type="react" title="Duty Cycle — MIG @ 240V">\nfunction App() {\n  const [a, setA] = use',
+    streaming: true,
+    timestamp: '3:10 PM',
+  },
+];
 
 const spatialConversation: ChatMessage[] = [
   {
@@ -189,9 +206,19 @@ const previews: ComponentPreviewModule = {
         messages={streamingConversation}
         voiceState="idle"
         onVoiceToggle={() => {}} />
-      
         </div>
-
+  },
+  {
+    name: 'Streaming artifact building',
+    description:
+      'Partial <artifact> tag mid-stream — raw XML hidden, building animation shown.',
+    render: () =>
+    <div className="h-[360px] border border-background-subtle rounded-lg overflow-hidden">
+      <ChatPane
+        messages={streamingArtifactConversation}
+        voiceState="idle"
+        onVoiceToggle={() => {}} />
+    </div>
   },
   {
     name: 'Empty state',
