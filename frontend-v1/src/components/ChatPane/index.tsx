@@ -1,12 +1,22 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { SendIcon, WifiOffIcon } from 'lucide-react';
+import { SendIcon, WifiOffIcon, ChevronDownIcon, BookOpenIcon, ZapIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Message from '../Message';
 import ToolCallChip, { ToolName, ToolStatus } from '../ToolCallChip';
 import ArtifactRenderer, { ArtifactType } from '../ArtifactRenderer';
 import VoiceButton, { VoiceState } from '../VoiceButton';
-import { parseArtifacts, stripArtifacts } from '../../lib/artifacts';
+import { SpatialViewport, REGISTRY_BY_VIEW } from '../SpatialViewport';
+import { AnnotatedImage } from '../AnnotatedImage';
+import {
+  parseArtifacts,
+  stripArtifacts,
+  stripSpatialContext,
+  parseReferenceImages,
+  stripReferenceImages,
+  type ReferenceImage,
+  type SpatialContextTag,
+} from '../../lib/artifacts';
 export interface ChatArtifact {
   id: string;
   type: ArtifactType;
@@ -28,6 +38,7 @@ export interface ChatMessage {
   toolCalls?: ChatToolCall[];
   artifacts?: ChatArtifact[];
   timestamp?: string;
+  spatialContext?: SpatialContextTag;
 }
 export interface ChatPaneProps {
   messages: ChatMessage[];
@@ -39,6 +50,75 @@ export interface ChatPaneProps {
   disabled?: boolean;
   emptyState?: React.ReactNode;
 }
+function ReferenceImages({ images }: { images: ReferenceImage[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (images.length === 0) return null;
+  return (
+    <div className="pl-11 mt-1">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors py-1"
+        aria-expanded={expanded}
+      >
+        <BookOpenIcon className="w-3.5 h-3.5" />
+        <span>References</span>
+        <ChevronDownIcon
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-3 border-l-2 border-background-subtle pl-3">
+          {images.map((img, i) => (
+            <figure key={i} className="space-y-1">
+              <AnnotatedImage src={img.url} alt={img.alt} bounds={img.bounds} />
+              {img.alt && (
+                <figcaption className="text-xs text-foreground-muted">{img.alt}</figcaption>
+              )}
+            </figure>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CollapsibleSpatial({ spatialContext }: { spatialContext: SpatialContextTag }) {
+  const [expanded, setExpanded] = useState(false);
+  const registry = REGISTRY_BY_VIEW[spatialContext.view];
+  const count = spatialContext.highlights.length;
+
+  return (
+    <div className="pl-11 mt-1">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors py-1"
+        aria-expanded={expanded}
+      >
+        <ZapIcon className="w-3.5 h-3.5" />
+        <span>
+          {count > 0
+            ? `${count} part${count !== 1 ? 's' : ''} highlighted`
+            : 'View diagram'}
+        </span>
+        <ChevronDownIcon
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {expanded && (
+        <div className="mt-2 max-w-xs rounded-lg overflow-hidden border border-background-subtle">
+          <SpatialViewport
+            currentView={spatialContext.view}
+            registry={registry}
+            highlightedComponents={spatialContext.highlights}
+            drawPath={spatialContext.draw_path}
+            transparent
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChatPane({
   messages,
   onSend,
@@ -114,8 +194,16 @@ function ChatPane({
           m.artifacts && m.artifacts.length > 0 ?
           m.artifacts :
           parsedArtifacts;
+
+          // When artifacts are present, lift inline images to the References section
+          const baseText =
+            m.role === 'assistant' ? stripSpatialContext(stripArtifacts(m.text)) : m.text;
+          const referenceImages =
+            m.role === 'assistant' && artifacts.length > 0
+              ? parseReferenceImages(baseText)
+              : [];
           const displayText =
-          m.role === 'assistant' ? stripArtifacts(m.text) : m.text;
+            referenceImages.length > 0 ? stripReferenceImages(baseText) : baseText;
 
           return (
         <div key={m.id} className="space-y-2">
@@ -153,18 +241,27 @@ function ChatPane({
                   </div>
           }
 
+              {m.role === 'assistant' && m.spatialContext && (
+                <CollapsibleSpatial spatialContext={m.spatialContext} />
+              )}
+
               {m.role === 'assistant' &&
           artifacts.length > 0 &&
           <div className="pl-11 space-y-3">
                     {artifacts.map((a) =>
             <ArtifactRenderer
               key={a.id}
+              id={a.id}
               type={a.type}
               title={a.title}
               code={a.code} />
 
             )}
                   </div>
+          }
+
+              {m.role === 'assistant' && referenceImages.length > 0 &&
+          <ReferenceImages images={referenceImages} />
           }
             </div>
           );

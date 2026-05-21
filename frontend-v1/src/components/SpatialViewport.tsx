@@ -215,6 +215,7 @@ export const WELDER_REAR_REGISTRY: Record<string, SpatialControlPoint> = {
         desc: "A button that resets the welder to its default settings."
     }
 };
+
 export const REGISTRY_BY_VIEW: Record<MachineView, Record<string, SpatialControlPoint>> = {
     front: WELDER_FRONT_REGISTRY,
     interior: WELDER_INTERIOR_REGISTRY,
@@ -244,7 +245,13 @@ type DragState =
 
 // ─── Props ─────────────────────────────────────────────────────────────────
 interface SpatialViewportProps {
-    activeComponent?: string;
+    /** Registry keys to highlight. Spotlights those components and darkens the rest. */
+    highlightedComponents?: string[];
+    /**
+     * When true, draws an animated circuit path between highlighted components.
+     * Defaults to false — must be explicitly set for connection/wiring explanations.
+     */
+    drawPath?: boolean;
     registry?: Record<string, SpatialControlPoint>;
     onAnnotationClick?: (point: SpatialControlPoint) => void;
     isModifyMode?: boolean;
@@ -256,11 +263,17 @@ interface SpatialViewportProps {
     telemetry?: WelderTelemetry;
     /** Which machine surface to display. Defaults to 'front'. */
     currentView?: MachineView;
+    /**
+     * Transparent mode — removes the dark bg/border so the image renders directly
+     * on the parent surface. Use inside the chat pane (light bg).
+     */
+    transparent?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
 export const SpatialViewport: React.FC<SpatialViewportProps> = ({
-    activeComponent,
+    highlightedComponents,
+    drawPath = false,
     registry: registryProp,
     onAnnotationClick,
     isModifyMode = false,
@@ -269,11 +282,16 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
     isOverlay = false,
     telemetry,
     currentView = 'front',
+    transparent = false,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [hoveredKey, setHoveredKey] = useState<string | null>(null);
     const [draggingKey, setDraggingKey] = useState<string | null>(null);
     const [draggingType, setDraggingType] = useState<'move' | 'resize' | null>(null);
+
+    // Unique SVG filter/mask ID prefix — prevents collisions when multiple viewports
+    // are mounted simultaneously (workbench + inline chat).
+    const pfx = useRef(`sv-${Math.random().toString(36).slice(2, 7)}`).current;
 
     const sourceRegistry = registryProp ?? WELDER_FRONT_REGISTRY;
 
@@ -304,7 +322,6 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
         };
     }, []);
 
-    // Move drag start
     const handlePinPointerDown = useCallback((
         e: React.PointerEvent, key: string, point: SpatialControlPoint
     ) => {
@@ -317,7 +334,6 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
         setDraggingType('move');
     }, [isModifyMode, getSvgPoint]);
 
-    // Resize drag start — triggered from the edge handle
     const handleResizePointerDown = useCallback((
         e: React.PointerEvent, key: string, point: SpatialControlPoint
     ) => {
@@ -329,18 +345,15 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
         setDraggingType('resize');
     }, [isModifyMode]);
 
-    // Container-level move handler (catches movement even between pins)
     const handleContainerPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         const ds = dragStateRef.current;
         if (!ds) return;
         const svgPos = getSvgPoint(e.clientX, e.clientY);
-
         if (ds.type === 'move') {
             const newX = Math.max(10, Math.min(990, svgPos.x - ds.offsetX));
             const newY = Math.max(10, Math.min(990, svgPos.y - ds.offsetY));
             setDraft(prev => ({ ...prev, [ds.key]: { ...prev[ds.key], x: newX, y: newY } }));
         } else {
-            // resize: radius = distance from pin centre to cursor
             const newRadius = Math.max(8, Math.round(
                 Math.sqrt(Math.pow(svgPos.x - ds.centerX, 2) + Math.pow(svgPos.y - ds.centerY, 2))
             ));
@@ -367,31 +380,65 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
     const activeRegistry = isModifyMode ? draft : sourceRegistry;
     const tooltipKey = isModifyMode ? null : hoveredKey;
     const tooltipPoint = tooltipKey ? activeRegistry[tooltipKey] : null;
-    const isLockedTooltip = tooltipKey === activeComponent;
+    const highlights = isModifyMode ? [] : (highlightedComponents ?? []);
+    const isLockedTooltip = !!tooltipKey && highlights.includes(tooltipKey);
     const draggedPoint = draggingKey ? draft[draggingKey] : null;
+
+    const circuitPairs: Array<[SpatialControlPoint, SpatialControlPoint]> = [];
+    if (drawPath && highlights.length >= 2) {
+        for (let i = 0; i < highlights.length - 1; i++) {
+            const from = activeRegistry[highlights[i]];
+            const to   = activeRegistry[highlights[i + 1]];
+            if (from && to) circuitPairs.push([from, to]);
+        }
+    }
 
     // ── Image per view ─────────────────────────────────────────────────────
     const VIEW_IMAGE: Record<MachineView, { src: string; alt: string }> = {
-        front: { src: '/product-front.png', alt: 'Vulcan Front Console' },
+        front:    { src: '/product-front.png',  alt: 'Vulcan Front Console' },
         interior: { src: '/product-inside.png', alt: 'Vulcan Internal Cabinet' },
-        back: { src: '/product-back.png', alt: 'Vulcan Rear Panel' },
+        back:     { src: '/product-back.png',   alt: 'Vulcan Rear Panel' },
     };
     const { src: imgSrc, alt: imgAlt } = VIEW_IMAGE[currentView];
+
+    // ── Accent colours — warning-amber for agent highlights ────────────────
+    // These are intentionally amber (not orange) to visually distinguish agent
+    // highlights from the orange editor-UI chrome (modify mode, toolbar, etc.)
+    const A_RING      = '#f59e0b';                    // amber-500
+    const A_RING_FILL = 'rgba(245,158,11,0.18)';
+    const A_PING      = 'rgba(251,191,36,0.40)';      // amber-400 translucent
+    const A_DOT       = '#fbbf24';                    // amber-400
+
+    // ── Neutral pin colours — adapt to rendering surface ──────────────────
+    const N_RING  = transparent ? 'rgba(63,63,70,0.75)'  : 'rgba(212,212,216,0.80)';
+    const N_FILL  = transparent ? 'rgba(0,0,0,0.08)'     : 'rgba(0,0,0,0.35)';
+    const N_DOT   = transparent ? '#71717a'              : '#d4d4d8';
+    const N_BACK  = transparent ? 'rgba(0,0,0,0.12)'     : 'rgba(255,255,255,0.22)';
+    const HV_RING = transparent ? 'rgba(0,0,0,0.80)'     : '#ffffff';
+    const HV_FILL = transparent ? 'rgba(0,0,0,0.06)'     : 'rgba(255,255,255,0.10)';
+    const HV_DOT  = transparent ? '#18181b'              : '#ffffff';
+
+    // ── Container class ────────────────────────────────────────────────────
+    const containerCls = transparent
+        ? `relative w-full overflow-hidden select-none transition-all duration-200${isModifyMode ? ' ring-2 ring-orange-500/20' : ''}`
+        : [
+            'relative w-full border rounded-xl overflow-hidden select-none transition-all duration-200',
+            isOverlay ? 'bg-zinc-950' : 'bg-zinc-950 shadow-2xl',
+            isModifyMode
+                ? 'border-orange-500/60 ring-2 ring-orange-500/20'
+                : isOverlay ? 'border-zinc-700/50' : 'border-zinc-800',
+          ].join(' ');
 
     return (
         <div
             ref={containerRef}
-            className={`relative w-full border bg-zinc-950 rounded-xl overflow-hidden select-none transition-all duration-200 ${isOverlay ? '' : 'shadow-2xl'
-                } ${isModifyMode
-                    ? 'border-orange-500/60 ring-2 ring-orange-500/20'
-                    : isOverlay ? 'border-zinc-700/50' : 'border-zinc-800'
-                }`}
+            className={containerCls}
             style={{ touchAction: isModifyMode ? 'none' : undefined }}
             onPointerMove={isModifyMode ? handleContainerPointerMove : undefined}
             onPointerUp={isModifyMode ? handleContainerPointerUp : undefined}
             onPointerLeave={isModifyMode ? handleContainerPointerUp : undefined}
         >
-            {/* ── Product image ──────────────────────────────────────────────── */}
+            {/* ── Product image — transparent PNG over parent surface ─────── */}
             <img
                 src={imgSrc}
                 alt={imgAlt}
@@ -402,33 +449,107 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
             {/* ── SVG marker overlay ─────────────────────────────────────────── */}
             <svg viewBox="0 0 1000 1000" className="absolute inset-0 w-full h-full pointer-events-none">
                 <defs>
-                    <filter id="ms" x="-40%" y="-40%" width="180%" height="180%">
+                    {/* ── Pin shadow filters — unique per instance ─────────────── */}
+                    <filter id={`${pfx}-ms`} x="-40%" y="-40%" width="180%" height="180%">
                         <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="rgba(0,0,0,0.7)" floodOpacity="1" />
                     </filter>
-                    <filter id="msa" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(249,115,22,0.8)" floodOpacity="1" />
+                    {/* Agent-highlight glow: warning-amber */}
+                    <filter id={`${pfx}-msa`} x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="rgba(245,158,11,0.8)" floodOpacity="1" />
                     </filter>
-                    <filter id="msd" x="-60%" y="-60%" width="220%" height="220%">
+                    {/* Drag-mode glow: editor orange */}
+                    <filter id={`${pfx}-msd`} x="-60%" y="-60%" width="220%" height="220%">
                         <feDropShadow dx="0" dy="0" stdDeviation="10" floodColor="rgba(249,115,22,1.0)" floodOpacity="1" />
                     </filter>
+                    {/* Circuit path glow */}
+                    <filter id={`${pfx}-cg`} x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur stdDeviation="5" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    {/* ── Spotlight mask (punches holes at highlighted positions) ─ */}
+                    {highlights.length > 0 && (
+                        <mask id={`${pfx}-sm`}>
+                            <rect x="0" y="0" width="1000" height="1000" fill="white" />
+                            {highlights.map(key => {
+                                const pt = activeRegistry[key];
+                                if (!pt) return null;
+                                const holeR = Math.max(pt.radius * 3.2, pt.radius + 60);
+                                return (
+                                    <circle key={key} cx={pt.x} cy={pt.y} r={holeR} fill="black" />
+                                );
+                            })}
+                        </mask>
+                    )}
+                    {/* ── CSS animations — instance-scoped march animation ─────── */}
+                    <style>{`
+                        @keyframes ${pfx}-march {
+                            from { stroke-dashoffset: 18; }
+                            to   { stroke-dashoffset: 0; }
+                        }
+                        @keyframes spotlight-breathe {
+                            0%, 100% { opacity: 0.62; }
+                            50%       { opacity: 0.70; }
+                        }
+                    `}</style>
                 </defs>
 
+                {/* ── Spotlight overlay (focus mode) ─────────────────────────── */}
+                {highlights.length > 0 && (
+                    <rect
+                        x="0" y="0" width="1000" height="1000"
+                        fill="rgba(0,0,0,1)"
+                        mask={`url(#${pfx}-sm)`}
+                        style={{ animation: 'spotlight-breathe 3s ease-in-out infinite' }}
+                    />
+                )}
+
+                {/* ── Circuit paths between highlighted components ────────────── */}
+                {circuitPairs.map(([from, to], i) => (
+                    <g key={i} filter={`url(#${pfx}-cg)`}>
+                        {/* Ambient glow line — amber */}
+                        <line
+                            x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                            stroke="rgba(245,158,11,0.25)"
+                            strokeWidth="14"
+                            strokeLinecap="round"
+                        />
+                        {/* Animated marching dashes — amber */}
+                        <line
+                            x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                            stroke={A_RING}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeDasharray="12 6"
+                            style={{ animation: `${pfx}-march 0.6s linear infinite` }}
+                        />
+                    </g>
+                ))}
+
                 {Object.entries(activeRegistry).map(([key, point]) => {
-                    const isSelected = !isModifyMode && activeComponent === key;
+                    const isSelected = highlights.includes(key);
                     const isHovered = !isModifyMode && hoveredKey === key;
                     const isDragging = isModifyMode && draggingKey === key;
                     const isActive = isSelected || isHovered || isDragging;
 
-                    const shadow = isDragging ? 'url(#msd)' : isActive ? 'url(#msa)' : 'url(#ms)';
-                    const ringFill = isSelected ? 'rgba(249,115,22,0.18)'
-                        : isHovered ? 'rgba(255,255,255,0.10)'
-                            : isDragging ? 'rgba(249,115,22,0.22)'
-                                : isModifyMode ? 'rgba(249,115,22,0.06)'
-                                    : 'rgba(0,0,0,0.35)';
-                    const ringStroke = (isSelected || isDragging) ? '#f97316'
-                        : isHovered ? '#ffffff'
-                            : isModifyMode ? 'rgba(249,115,22,0.55)'
-                                : 'rgba(212,212,216,0.80)';
+                    const shadow = isDragging
+                        ? `url(#${pfx}-msd)`
+                        : isActive ? `url(#${pfx}-msa)` : `url(#${pfx}-ms)`;
+
+                    // Selected → amber; drag/modify → orange (editor chrome); neutral → surface-aware
+                    const ringFill = isSelected     ? A_RING_FILL
+                        : isHovered                 ? HV_FILL
+                        : isDragging                ? 'rgba(249,115,22,0.22)'
+                        : isModifyMode              ? 'rgba(249,115,22,0.06)'
+                        : N_FILL;
+
+                    const ringStroke = isSelected   ? A_RING
+                        : isDragging                ? '#f97316'
+                        : isHovered                 ? HV_RING
+                        : isModifyMode              ? 'rgba(249,115,22,0.55)'
+                        : N_RING;
 
                     return (
                         <g key={key} filter={shadow}>
@@ -441,19 +562,21 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                 onMouseLeave={() => { if (!isModifyMode) setHoveredKey(null); }}
                                 onPointerDown={(e) => handlePinPointerDown(e, key, point)}
                             >
-                                {/* Expanded hit zone */}
-                                <circle cx={point.x} cy={point.y} r={point.radius + 14} fill="transparent" />
+                                {/* Generous hit zone — +20px for gloved-hand usability */}
+                                <circle cx={point.x} cy={point.y} r={point.radius + 20} fill="transparent" />
 
-                                {/* Ping halo — selected / moving */}
+                                {/* Ping halo — amber for agent highlights, orange for drag */}
                                 {(isSelected || (isDragging && draggingType === 'move')) && (
                                     <circle cx={point.x} cy={point.y} r={point.radius + 12}
-                                        fill="none" stroke="rgba(251,146,60,0.40)" strokeWidth={1.5}
+                                        fill="none"
+                                        stroke={isSelected ? A_PING : 'rgba(251,146,60,0.40)'}
+                                        strokeWidth={1.5}
                                         className="animate-ping"
                                         style={{ transformOrigin: `${point.x}px ${point.y}px` }}
                                     />
                                 )}
 
-                                {/* Outer dashed orbit (modify mode) */}
+                                {/* Outer dashed orbit (modify mode only) */}
                                 {isModifyMode && (
                                     <circle cx={point.x} cy={point.y} r={point.radius + 8}
                                         fill="none"
@@ -463,30 +586,32 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                     />
                                 )}
 
-                                {/* White contrast backing */}
+                                {/* Contrast backing ring — surface-aware */}
                                 <circle cx={point.x} cy={point.y} r={point.radius + 1}
-                                    fill="none" stroke="rgba(255,255,255,0.22)"
+                                    fill="none"
+                                    stroke={N_BACK}
                                     strokeWidth={isActive ? 4 : 2.5}
                                 />
 
-                                {/* Main ring */}
+                                {/* Main annotation ring */}
                                 <circle cx={point.x} cy={point.y} r={point.radius}
-                                    fill={ringFill} stroke={ringStroke}
+                                    fill={ringFill}
+                                    stroke={ringStroke}
                                     strokeWidth={isActive ? 2.5 : isModifyMode ? 1.8 : 2}
                                     strokeDasharray={isSelected ? '7 3' : undefined}
                                 />
 
-                                {/* Cardinal ticks (selected) */}
+                                {/* Cardinal ticks — amber when agent-highlighted */}
                                 {isSelected && (
                                     <>
-                                        <line x1={point.x - point.radius - 7} y1={point.y} x2={point.x - point.radius + 5} y2={point.y} stroke="#f97316" strokeWidth={2.5} strokeLinecap="round" />
-                                        <line x1={point.x + point.radius - 5} y1={point.y} x2={point.x + point.radius + 7} y2={point.y} stroke="#f97316" strokeWidth={2.5} strokeLinecap="round" />
-                                        <line x1={point.x} y1={point.y - point.radius - 7} x2={point.x} y2={point.y - point.radius + 5} stroke="#f97316" strokeWidth={2.5} strokeLinecap="round" />
-                                        <line x1={point.x} y1={point.y + point.radius - 5} x2={point.x} y2={point.y + point.radius + 7} stroke="#f97316" strokeWidth={2.5} strokeLinecap="round" />
+                                        <line x1={point.x - point.radius - 7} y1={point.y} x2={point.x - point.radius + 5} y2={point.y} stroke={A_RING} strokeWidth={2.5} strokeLinecap="round" />
+                                        <line x1={point.x + point.radius - 5} y1={point.y} x2={point.x + point.radius + 7} y2={point.y} stroke={A_RING} strokeWidth={2.5} strokeLinecap="round" />
+                                        <line x1={point.x} y1={point.y - point.radius - 7} x2={point.x} y2={point.y - point.radius + 5} stroke={A_RING} strokeWidth={2.5} strokeLinecap="round" />
+                                        <line x1={point.x} y1={point.y + point.radius - 5} x2={point.x} y2={point.y + point.radius + 7} stroke={A_RING} strokeWidth={2.5} strokeLinecap="round" />
                                     </>
                                 )}
 
-                                {/* Alignment crosshairs (dragging move) */}
+                                {/* Alignment crosshairs (dragging move — editor chrome) */}
                                 {isDragging && draggingType === 'move' && (
                                     <>
                                         <line x1={0} y1={point.y} x2={1000} y2={point.y} stroke="rgba(249,115,22,0.22)" strokeWidth={1} strokeDasharray="4 6" />
@@ -494,7 +619,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                     </>
                                 )}
 
-                                {/* Move handle arrows */}
+                                {/* Move handle arrows (modify mode — editor chrome) */}
                                 {isModifyMode && !isDragging && (
                                     <>
                                         <line x1={point.x - 8} y1={point.y} x2={point.x - 3} y2={point.y} stroke="rgba(249,115,22,0.6)" strokeWidth={1.5} strokeLinecap="round" />
@@ -507,7 +632,13 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                 {/* Centre dot */}
                                 <circle cx={point.x} cy={point.y}
                                     r={isActive ? 5 : isModifyMode ? 4.5 : 3.5}
-                                    fill={(isSelected || (isDragging && draggingType === 'move')) ? '#fb923c' : isHovered ? '#ffffff' : isModifyMode ? 'rgba(249,115,22,0.7)' : '#d4d4d8'}
+                                    fill={
+                                        isSelected                          ? A_DOT
+                                        : isDragging && draggingType === 'move' ? '#fb923c'
+                                        : isHovered                        ? HV_DOT
+                                        : isModifyMode                     ? 'rgba(249,115,22,0.7)'
+                                        : N_DOT
+                                    }
                                 />
                             </g>
 
@@ -518,7 +649,6 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                     style={{ cursor: isDragging && draggingType === 'resize' ? 'grabbing' : 'ew-resize' }}
                                     onPointerDown={(e) => handleResizePointerDown(e, key, point)}
                                 >
-                                    {/* Visual ring around the handle */}
                                     <circle
                                         cx={point.x + point.radius}
                                         cy={point.y}
@@ -527,7 +657,6 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                         stroke={isDragging && draggingType === 'resize' ? 'rgba(249,115,22,0.5)' : 'rgba(249,115,22,0.2)'}
                                         strokeWidth={1}
                                     />
-                                    {/* Handle diamond */}
                                     <path
                                         d={`M ${point.x + point.radius} ${point.y - 6}
                                             L ${point.x + point.radius + 6} ${point.y}
@@ -538,7 +667,6 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                                         stroke="rgba(255,255,255,0.9)"
                                         strokeWidth={1.2}
                                     />
-                                    {/* Resize ring pulse (active) */}
                                     {isDragging && draggingType === 'resize' && (
                                         <circle cx={point.x} cy={point.y} r={point.radius}
                                             fill="none" stroke="rgba(251,146,60,0.30)" strokeWidth={1}
@@ -657,11 +785,11 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
             {/* ── Hover tooltip (normal mode only) ───────────────────────────── */}
             {tooltipPoint && (
                 <div style={resolveTooltipStyle(tooltipPoint)}>
-                    <div className="w-[218px] rounded-lg overflow-hidden shadow-[0_0_0_1px_rgba(249,115,22,0.5),0_8px_32px_rgba(0,0,0,0.85)]">
-                        <div className="flex items-center justify-between bg-orange-500/10 border-b border-orange-500/30 px-3 py-1.5">
+                    <div className="w-[218px] rounded-lg overflow-hidden shadow-[0_0_0_1px_rgba(245,158,11,0.5),0_8px_32px_rgba(0,0,0,0.85)]">
+                        <div className="flex items-center justify-between bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5">
                             <div className="flex items-center gap-1.5">
-                                <span className={`h-1.5 w-1.5 rounded-full ${isLockedTooltip ? 'bg-orange-400 animate-pulse' : 'bg-zinc-500'}`} />
-                                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-orange-400">
+                                <span className={`h-1.5 w-1.5 rounded-full ${isLockedTooltip ? 'bg-amber-400 animate-pulse' : 'bg-zinc-500'}`} />
+                                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-amber-400">
                                     {isLockedTooltip ? 'Locked' : 'Hover'}
                                 </span>
                             </div>

@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIcon,
-  GaugeIcon
-} from 'lucide-react';
 import ChatPane, {
   ChatMessage,
   ChatToolCall
 } from '../ChatPane';
-import DebugPanel, { DebugTurn } from '../DebugPanel';
-import { parseArtifacts } from '../../lib/artifacts';
+import { parseArtifacts, parseSpatialContext } from '../../lib/artifacts';
 import { ApiMessage, streamChat } from '../../lib/chatApi';
 import { useWorkbench } from '../WorkbenchOverlay';
 
@@ -117,15 +112,18 @@ function EmptyState({ onPrompt }: { onPrompt: (prompt: string) => void }) {
 
 export function IgnisApp() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [turns, setTurns] = useState<DebugTurn[]>([]);
   const [offline, setOffline] = useState(
     typeof navigator !== 'undefined' ? !navigator.onLine : false
   );
   const [isStreaming, setIsStreaming] = useState(false);
   const sessionId = useRef(makeId('session'));
   const history = useRef<ApiMessage[]>([]);
-  const { setArtifacts } = useWorkbench();
+  const {
+    setArtifacts, setSpatialContext, setSessionState, addTurn,
+    registerSendMessage, setActiveChecklist, open, registerSessionId,
+  } = useWorkbench();
 
+  // Sync all assistant artifacts into context (for backward compat)
   useEffect(() => {
     const all = messages
       .filter(m => m.role === 'assistant')
@@ -184,11 +182,15 @@ export function IgnisApp() {
         })) {
           if (event.type === 'text_delta') {
             finalText += event.text;
+            // Parse spatial tag and update context (incrementally safe)
+            const spatial = parseSpatialContext(finalText);
+            if (spatial) setSpatialContext(spatial);
             setMessages((current) =>
               updateAssistant(current, assistantId, (message) => ({
                 ...message,
                 text: finalText,
-                artifacts: parseArtifacts(finalText)
+                artifacts: parseArtifacts(finalText),
+                spatialContext: spatial ?? message.spatialContext,
               }))
             );
           }
@@ -222,6 +224,7 @@ export function IgnisApp() {
           if (event.type === 'done') {
             inputTokens = event.input_tokens;
             outputTokens = event.output_tokens;
+            if (event.session_context) setSessionState(event.session_context);
           }
         }
       } catch (error) {
@@ -243,77 +246,53 @@ export function IgnisApp() {
           ...history.current,
           { role: 'assistant', content: finalText }
         ];
+        const finalArtifacts = parseArtifacts(finalText);
         setMessages((current) =>
           updateAssistant(current, assistantId, (message) => ({
             ...message,
             streaming: false,
-            artifacts: parseArtifacts(finalText)
+            artifacts: finalArtifacts,
+            spatialContext: parseSpatialContext(finalText) ?? message.spatialContext,
           }))
         );
-        setTurns((current) => [
-          ...current,
-          {
-            id: `turn_${String(current.length + 1).padStart(2, '0')}`,
-            label: text.length > 46 ? `${text.slice(0, 43)}...` : text,
-            latencyMs,
-            inputTokens,
-            outputTokens,
-            costUsd:
-              inputTokens * INPUT_COST_PER_TOKEN +
-              outputTokens * OUTPUT_COST_PER_TOKEN,
-            toolsCalled: turnTools
-          }
-        ]);
+        const checklist = finalArtifacts.find(a => a.type === 'checklist');
+        if (checklist) {
+          setActiveChecklist(checklist);
+          open();
+        }
+        addTurn({
+          id: `turn_${Date.now()}`,
+          label: text.length > 46 ? `${text.slice(0, 43)}...` : text,
+          latencyMs,
+          inputTokens,
+          outputTokens,
+          costUsd:
+            inputTokens * INPUT_COST_PER_TOKEN +
+            outputTokens * OUTPUT_COST_PER_TOKEN,
+          toolsCalled: turnTools
+        });
         setIsStreaming(false);
       }
     },
-    [isStreaming]
+    [isStreaming, setSpatialContext, setSessionState, addTurn, setActiveChecklist, open]
   );
 
-  const totalTokens = turns.reduce(
-    (sum, turn) => sum + turn.inputTokens + turn.outputTokens,
-    0
-  );
-  const totalCost = turns.reduce((sum, turn) => sum + turn.costUsd, 0);
+  useEffect(() => {
+    registerSendMessage(sendMessage);
+  }, [registerSendMessage, sendMessage]);
+
+  useEffect(() => {
+    registerSessionId(sessionId.current);
+  }, [registerSessionId]);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background-muted">
       <header className="border-b border-background-subtle bg-background">
-        <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/ignis-logo.svg" alt="Ignis" className="h-8 w-auto" />
-            <p className="text-xs text-foreground-muted">
-              Vulcan OmniPro 220 · technician assistant
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-xs md:w-auto">
-            <div className="rounded-md border border-background-subtle bg-background-muted px-3 py-2">
-              <div className="flex items-center gap-1.5 text-foreground-subtle">
-                <ActivityIcon className="h-3.5 w-3.5" />
-                Turns
-              </div>
-              <div className="font-mono text-foreground">{turns.length}</div>
-            </div>
-            <div className="rounded-md border border-background-subtle bg-background-muted px-3 py-2">
-              <div className="flex items-center gap-1.5 text-foreground-subtle">
-                <GaugeIcon className="h-3.5 w-3.5" />
-                Tokens
-              </div>
-              <div className="font-mono text-foreground">
-                {totalTokens.toLocaleString()}
-              </div>
-            </div>
-            <div className="rounded-md border border-background-subtle bg-background-muted px-3 py-2">
-              <div className="flex items-center gap-1.5 text-foreground-subtle">
-                $
-                Cost
-              </div>
-              <div className="font-mono text-foreground">
-                ${totalCost.toFixed(4)}
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <img src="/ignis-logo.svg" alt="Ignis" className="h-8 w-auto" />
+          <p className="text-xs text-foreground-muted">
+            Vulcan OmniPro 220 · technician assistant
+          </p>
         </div>
       </header>
 
@@ -327,9 +306,6 @@ export function IgnisApp() {
             emptyState={<EmptyState onPrompt={sendMessage} />}
           />
         </section>
-        <div className="border-t border-background-subtle bg-background p-3">
-          <DebugPanel turns={turns} />
-        </div>
       </main>
     </div>
   );
