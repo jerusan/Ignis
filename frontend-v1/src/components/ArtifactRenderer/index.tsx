@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   CodeIcon,
   EyeIcon,
@@ -6,12 +8,13 @@ import {
   RefreshCwIcon } from
 'lucide-react';
 import { useWorkbench } from '../WorkbenchOverlay';
-export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist';
+export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist' | 'mermaid' | 'markdown';
 export interface ArtifactRendererProps {
   id?: string;
   type: ArtifactType;
   title: string;
   code: string;
+  source_pages?: string;
   height?: number | string;
   defaultView?: 'preview' | 'code';
 }
@@ -26,13 +29,13 @@ const SANDBOX_HTML =
 SANDBOX_STYLE +
 '</style>' +
 SCRIPT_OPEN +
-' crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js">' +
+' src="/sandbox/react.production.min.js">' +
 SCRIPT_CLOSE +
 SCRIPT_OPEN +
-' crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js">' +
+' src="/sandbox/react-dom.production.min.js">' +
 SCRIPT_CLOSE +
 SCRIPT_OPEN +
-' src="https://unpkg.com/@babel/standalone/babel.min.js">' +
+' src="/sandbox/babel.min.js">' +
 SCRIPT_CLOSE +
 '</head><body><div id="root"></div>' +
 SCRIPT_OPEN +
@@ -41,12 +44,36 @@ SCRIPT_OPEN +
 "  if (e.data && e.data.type === 'render') {" +
 '    try {' +
 "      var transformed = Babel.transform(e.data.code, { presets: ['react'] }).code;" +
-"      var fn = new Function('React', 'ReactDOM', 'useState', 'useEffect', 'createElement', transformed + '; if (typeof App !== \"undefined\") ReactDOM.createRoot(document.getElementById(\"root\")).render(React.createElement(App));');" +
-'      fn(React, ReactDOM, React.useState, React.useEffect, React.createElement);' +
+"      var fn = new Function('React', 'ReactDOM', 'useState', 'useEffect', 'useRef', 'createElement', 'updateWorkbench', transformed + '; if (typeof App !== \"undefined\") ReactDOM.createRoot(document.getElementById(\"root\")).render(React.createElement(App));');" +
+"      var updateWorkbench = function(payload) { window.parent.postMessage({ type: 'ignis:updateWorkbench', payload: payload }, '*'); };" +
+'      fn(React, ReactDOM, React.useState, React.useEffect, React.useRef, React.createElement, updateWorkbench);' +
 '    } catch (err) {' +
 "      document.getElementById('root').innerHTML = '<pre id=\"error\">' + (err.message || String(err)) + '</pre>';" +
 '    }' +
 '  }' +
+'});' +
+SCRIPT_CLOSE +
+'</body></html>';
+
+const MERMAID_STYLE =
+'body { margin: 0; padding: 16px; background: #fff; display: flex; align-items: flex-start; justify-content: center; overflow: auto; }' +
+'#error { color: #b91c1c; background: #fef2f2; padding: 12px; border-radius: 6px; font-family: monospace; white-space: pre-wrap; width: 100%; }' +
+'svg { max-width: 100%; height: auto; }';
+
+const MERMAID_HTML =
+'<!doctype html><html><head><meta charset="utf-8" />' +
+'<style>' + MERMAID_STYLE + '</style>' +
+SCRIPT_OPEN + ' src="/sandbox/mermaid.min.js">' + SCRIPT_CLOSE +
+'</head><body><div id="diagram"></div>' +
+SCRIPT_OPEN + '>' +
+'mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });' +
+"window.addEventListener('message', function(e) {" +
+"  if (!e.data || e.data.type !== 'render') return;" +
+"  mermaid.render('ignis-diagram', e.data.code).then(function(r) {" +
+"    document.getElementById('diagram').innerHTML = r.svg;" +
+"  }).catch(function(err) {" +
+"    document.getElementById('diagram').innerHTML = '<pre id=\"error\">' + (err.message || String(err)) + '</pre>';" +
+'  });' +
 '});' +
 SCRIPT_CLOSE +
 '</body></html>';
@@ -55,6 +82,7 @@ function ArtifactRenderer({
   type,
   title,
   code,
+  source_pages,
   height = 360,
   defaultView = 'preview'
 }: ArtifactRendererProps) {
@@ -66,7 +94,6 @@ function ArtifactRenderer({
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
 
   // Checklist artifacts render in the Workbench panel (LeftZone).
-  // Show a compact reference card here so the user knows where to find it.
   if (type === 'checklist') {
     return (
       <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 w-full">
@@ -76,44 +103,48 @@ function ArtifactRenderer({
       </div>
     );
   }
+
+  // svg/html embed code directly; react/mermaid use postMessage after load.
   const isHtmlLike = type === 'svg' || type === 'html';
+  const usesPostMessage = type === 'react' || type === 'mermaid';
+
   useEffect(() => {
-    if (isHtmlLike) return;
+    if (!usesPostMessage) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
     const onLoad = () => {
       try {
-        iframe.contentWindow?.postMessage(
-          {
-            type: 'render',
-            code
-          },
-          '*'
-        );
+        iframe.contentWindow?.postMessage({ type: 'render', code }, '*');
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     };
     iframe.addEventListener('load', onLoad);
     return () => iframe.removeEventListener('load', onLoad);
-  }, [code, isHtmlLike, renderKey]);
-  const srcDoc = isHtmlLike ?
-  type === 'svg' ?
-  '<!doctype html><html><body style="margin:0;padding:16px;display:flex;align-items:center;justify-content:center;background:#fff;">' +
-  code +
-  '</body></html>' :
-  code :
-  SANDBOX_HTML;
+  }, [code, usesPostMessage, renderKey]);
+
+  const srcDoc = isHtmlLike
+    ? type === 'svg'
+      ? '<!doctype html><html><body style="margin:0;padding:16px;display:flex;align-items:center;justify-content:center;background:#fff;">' + code + '</body></html>'
+      : code
+    : type === 'mermaid'
+      ? MERMAID_HTML
+      : SANDBOX_HTML;
   return (
     <div className="border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full">
       <div className="flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white">
+          <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
             {type}
           </span>
           <span className="font-heading font-medium text-sm text-foreground truncate">
             {title}
           </span>
+          {source_pages && (
+            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-background-subtle text-foreground-muted flex-shrink-0 whitespace-nowrap">
+              pp. {source_pages}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <div className="flex rounded-md border border-background-subtle overflow-hidden">
@@ -139,7 +170,7 @@ function ArtifactRenderer({
           {id && (
             <button
               type="button"
-              onClick={() => addPinnedArtifact({ id, type, title, code })}
+              onClick={() => addPinnedArtifact({ id, type, title, code, source_pages })}
               disabled={isPinned}
               className={`p-1 rounded hover:bg-background-subtle text-foreground-muted ${isPinned ? 'opacity-40 cursor-not-allowed' : ''}`}
               aria-label={isPinned ? 'Already pinned' : 'Pin to workbench'}
@@ -165,38 +196,40 @@ function ArtifactRenderer({
         </div>
       </div>
 
-      {view === 'preview' ?
-      <div
-        className="relative bg-background"
-        style={{
-          height
-        }}>
-        
-          {error &&
-        <div className="absolute inset-0 flex items-start gap-2 p-3 bg-error/10 text-error text-xs font-mono overflow-auto z-10">
-              <AlertTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <pre className="whitespace-pre-wrap break-words">{error}</pre>
-            </div>
-        }
-          <iframe
-          key={renderKey}
-          ref={iframeRef}
-          sandbox="allow-scripts"
-          srcDoc={srcDoc}
-          title={title}
-          className="w-full h-full border-0" />
-        
-        </div> :
-
-      <pre
-        className="font-mono text-xs leading-relaxed text-foreground bg-background-muted p-3 overflow-auto"
-        style={{
-          maxHeight: height
-        }}>
-        
+      {view === 'preview' ? (
+        type === 'markdown' ? (
+          <div
+            className="prose-ignis px-4 py-3 overflow-auto bg-background"
+            style={{ maxHeight: height }}
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{code}</ReactMarkdown>
+          </div>
+        ) : (
+          <div className="relative bg-background" style={{ height }}>
+            {error && (
+              <div className="absolute inset-0 flex items-start gap-2 p-3 bg-error/10 text-error text-xs font-mono overflow-auto z-10">
+                <AlertTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <pre className="whitespace-pre-wrap break-words">{error}</pre>
+              </div>
+            )}
+            <iframe
+              key={renderKey}
+              ref={iframeRef}
+              sandbox="allow-scripts"
+              srcDoc={srcDoc}
+              title={title}
+              className="w-full h-full border-0"
+            />
+          </div>
+        )
+      ) : (
+        <pre
+          className="font-mono text-xs leading-relaxed text-foreground bg-background-muted p-3 overflow-auto"
+          style={{ maxHeight: height }}
+        >
           <code>{code}</code>
         </pre>
-      }
+      )}
     </div>);
 
 }

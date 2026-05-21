@@ -9,6 +9,7 @@ import __IgnisAppPreviews from './IgnisApp/IgnisApp.previews';
 import __MessagePreviews from './Message/Message.previews';
 import __ToolCallChipPreviews from './ToolCallChip/ToolCallChip.previews';
 import __VoiceButtonPreviews from './VoiceButton/VoiceButton.previews';
+import __WizardModeViewPreviews from './WizardModeView/WizardModeView.previews';
 const __contextMd: Record<string, string> = {
   "ArtifactRenderer": `
 # ArtifactRenderer
@@ -263,7 +264,8 @@ __DebugPanelPreviews,
 __IgnisAppPreviews,
 __MessagePreviews,
 __ToolCallChipPreviews,
-__VoiceButtonPreviews].
+__VoiceButtonPreviews,
+__WizardModeViewPreviews].
 
 filter((m) => m && m.componentName).
 map((m) => ({ ...m, contextMd: __contextMd[m.componentName] ?? m.contextMd })).

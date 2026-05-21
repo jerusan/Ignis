@@ -24,40 +24,40 @@ interface Props {
 }
 
 // ── Machine image area ────────────────────────────────────────────────────────
+// Images are 1:1 (front/interior) or ~0.84:1 (back). We set aspect-ratio on
+// the wrapper so it takes exactly available height without overflow or clipping.
+const VIEW_ASPECT: Record<MachineView, string> = {
+  front:    '1 / 1',
+  interior: '1 / 1',
+  back:     '0.839 / 1',
+};
 
 function MachineImage({ currentStep }: { currentStep: WizardStep }) {
   const spatial = currentStep.spatial ?? null;
+  // When no spatial context is provided, default to a non-annotated front view.
+  const view: MachineView = spatial?.view ?? 'front';
+  const registry = REGISTRY_BY_VIEW[view];
 
-  if (spatial) {
-    const registry = REGISTRY_BY_VIEW[spatial.view];
-    return (
-      <div className="relative overflow-hidden rounded-2xl mx-auto w-full"
-           style={{ backgroundColor: '#0f1114', border: '1px solid #2a2f3b', maxWidth: '480px' }}>
-        <SpatialViewport
-          currentView={spatial.view}
-          registry={registry}
-          highlightedComponents={spatial.highlights}
-          drawPath={spatial.draw_path}
-          isOverlay
-        />
-      </div>
-    );
-  }
-
-  // Fallback — plain product image
   return (
+    // Wrapper: fills available flex height, maintains image aspect-ratio so the
+    // SVG overlay coordinates stay aligned, never overflows.
     <div
-      className="w-full rounded-2xl overflow-hidden flex items-center justify-center"
+      className="relative overflow-hidden rounded-2xl flex-shrink-0"
       style={{
-        backgroundColor: '#1a1d24',
+        backgroundColor: '#0f1114',
         border: '1px solid #2a2f3b',
-        aspectRatio: '4 / 3',
+        height: '100%',
+        aspectRatio: VIEW_ASPECT[view],
+        maxWidth: '100%',
+        maxHeight: '100%',
       }}
     >
-      <img
-        src="/product-front.png"
-        alt="Vulcan OmniPro 220"
-        className="w-full h-full object-contain p-6"
+      <SpatialViewport
+        currentView={view}
+        registry={registry}
+        highlightedComponents={spatial?.highlights}
+        drawPath={spatial?.draw_path}
+        isOverlay
       />
     </div>
   );
@@ -143,81 +143,42 @@ export default function WizardModeView({
         </span>
       </div>
 
-      {/* ── Scrollable body ───────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
-
-        {/* Machine image */}
+      {/* ── Image — fills all remaining height ───────────────────────────── */}
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4 pt-3 pb-1">
         <MachineImage
           currentStep={step}
           key={currentStepIdx}
         />
+      </div>
 
-        {/* Step card */}
-        <div
-          className="rounded-2xl px-5 py-4 animate-slide-up"
-          key={`step-${currentStepIdx}`}
-          style={{ backgroundColor: '#1a1d24', border: '1px solid #2a2f3b' }}
-        >
-          <div className="flex items-start gap-3">
-            <span
-              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center
-                         justify-center text-xs font-bold text-white"
-              style={{ backgroundColor: '#ff6b00' }}
+      {/* ── Step card — fixed below the image ─────────────────────────────── */}
+      <div
+        className="flex-shrink-0 mx-4 mb-2 rounded-2xl px-5 py-3 animate-slide-up"
+        key={`step-${currentStepIdx}`}
+        style={{ backgroundColor: '#1a1d24', border: '1px solid #2a2f3b' }}
+      >
+        <div className="flex items-start gap-3">
+          <span
+            className="flex-shrink-0 w-7 h-7 rounded-full flex items-center
+                       justify-center text-xs font-bold text-white"
+            style={{ backgroundColor: '#ff6b00' }}
+          >
+            {currentStepIdx + 1}
+          </span>
+          <div className="min-w-0">
+            <h3
+              className="font-semibold text-sm leading-snug mb-0.5"
+              style={{ color: '#e6e9ef' }}
             >
-              {currentStepIdx + 1}
-            </span>
-            <div className="min-w-0">
-              <h3
-                className="font-semibold text-base leading-snug mb-1"
-                style={{ color: '#e6e9ef' }}
-              >
-                {step.text}
-              </h3>
-              {step.detail && (
-                <p className="text-sm leading-relaxed" style={{ color: '#a3a9b8' }}>
-                  {step.detail}
-                </p>
-              )}
-            </div>
+              {step.text}
+            </h3>
+            {step.detail && (
+              <p className="text-xs leading-relaxed" style={{ color: '#a3a9b8' }}>
+                {step.detail}
+              </p>
+            )}
           </div>
         </div>
-
-        {/* Up-next preview */}
-        {currentStepIdx + 1 < total && (
-          <div className="space-y-2">
-            <p
-              className="text-[10px] uppercase tracking-widest font-mono"
-              style={{ color: '#6b7585' }}
-            >
-              Up next
-            </p>
-            {steps.slice(currentStepIdx + 1, currentStepIdx + 3).map((s, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-xl px-4 py-3"
-                style={{
-                  backgroundColor: '#1a1d24',
-                  border: '1px solid #2a2f3b',
-                  opacity: 0.5,
-                }}
-              >
-                <span
-                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center
-                             justify-center text-[10px] font-bold"
-                  style={{ backgroundColor: '#21252e', color: '#a3a9b8' }}
-                >
-                  {currentStepIdx + 2 + i}
-                </span>
-                <span
-                  className="text-sm truncate"
-                  style={{ color: '#a3a9b8' }}
-                >
-                  {s.text}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── CTA button ────────────────────────────────────────────────────── */}

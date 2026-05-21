@@ -121,7 +121,11 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     const togglePin  = useCallback(() => setIsPinned(v => !v), []);
 
     const addPinnedArtifact = useCallback((a: ChatArtifact) => {
-        setPinnedArtifacts(prev => prev.find(p => p.id === a.id) ? prev : [...prev, a]);
+        setPinnedArtifacts(prev => {
+            const idx = prev.findIndex(p => p.id === a.id);
+            if (idx >= 0) return prev.map((p, i) => i === idx ? a : p);
+            return [...prev, a];
+        });
     }, []);
     const removePinnedArtifact = useCallback((id: string) => {
         setPinnedArtifacts(prev => prev.filter(p => p.id !== id));
@@ -145,6 +149,30 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     }, []);
     const registerSessionId = useCallback((id: string) => {
         sessionIdRef.current = id;
+    }, []);
+
+    // ── ignis:updateWorkbench back-channel ─────────────────────────────────────
+    // Artifact iframes can post this message to update session state directly.
+    // Shape: { type: 'ignis:updateWorkbench', payload: Partial<SessionState> }
+    useEffect(() => {
+        const ALLOWED_KEYS: (keyof SessionState)[] = ['process', 'voltage', 'material', 'thickness', 'wire_size'];
+        const handler = (e: MessageEvent) => {
+            if (!e.data || e.data.type !== 'ignis:updateWorkbench') return;
+            const payload = e.data.payload;
+            if (!payload || typeof payload !== 'object') return;
+            setSessionState(prev => {
+                const next = { ...prev };
+                for (const key of ALLOWED_KEYS) {
+                    if (key in payload) {
+                        const val = payload[key];
+                        next[key] = typeof val === 'string' ? val : val == null ? null : String(val);
+                    }
+                }
+                return next;
+            });
+        };
+        window.addEventListener('message', handler);
+        return () => window.removeEventListener('message', handler);
     }, []);
 
     return (

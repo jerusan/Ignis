@@ -4,6 +4,9 @@ import type { ComponentPreviewModule } from '../previewTypes';
 const dutyCycleCalc = `function App() {
   const [amps, setAmps] = useState(150);
   const dutyCycle = amps >= 200 ? 30 : amps >= 150 ? 60 : 100;
+  useEffect(() => {
+    updateWorkbench({ process: 'MIG', voltage: '240V', amperage: String(amps) });
+  }, [amps]);
   return (
     <div style={{ fontFamily: 'system-ui', padding: 16 }}>
       <h2 style={{ margin: 0 }}>Duty Cycle — MIG @ 240V</h2>
@@ -35,6 +38,33 @@ const polaritySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 18
   <text x="250" y="74" font-family="system-ui" font-size="12" fill="#dc2626">Workpiece (+)</text>
   <text x="250" y="114" font-family="system-ui" font-size="12" fill="#1f2937">TIG Torch (−)</text>
 </svg>`;
+const porositySolvingMermaid = `flowchart TD
+  A[Porosity in weld?] --> B{Gas shielding OK?}
+  B -- No --> C[Check gas flow rate\\n15–25 CFH for MIG]
+  B -- Yes --> D{Base metal clean?}
+  D -- No --> E[Grind / degrease metal\\nRemove rust and mill scale]
+  D -- Yes --> F{Wire condition OK?}
+  F -- No --> G[Replace wire spool\\nAvoid rusty or damp wire]
+  F -- Yes --> H{Travel speed correct?}
+  H -- Too fast --> I[Slow down — let\\nshielding gas cover pool]
+  H -- OK --> J[Check for drafts\\nWind can disperse shielding gas]`;
+
+const migSetupMarkdown = `## MIG Setup Checklist — 240V
+
+| Parameter | Value |
+|---|---|
+| Process | MIG (GMAW) |
+| Input | 240V / 50A circuit |
+| Wire | ER70S-6, 0.030" or 0.035" |
+| Gas | 75/25 Ar/CO₂ @ 20 CFH |
+
+### Steps
+1. Set polarity to **DCEP** (electrode positive)
+2. Thread wire through inlet liner and drive rolls
+3. Set wire feed speed for material thickness
+4. Set voltage to match wire speed (synergic mode)
+5. Run a test bead on scrap metal before welding`;
+
 const previews: ComponentPreviewModule = {
   componentName: 'ArtifactRenderer',
   importPath: 'components/ArtifactRenderer',
@@ -59,6 +89,7 @@ const previews: ComponentPreviewModule = {
       type="svg"
       title="TIG Polarity (DCEN)"
       code={polaritySvg}
+      source_pages="13,14"
       height={240} />
 
 
@@ -73,8 +104,28 @@ const previews: ComponentPreviewModule = {
       code={dutyCycleCalc}
       defaultView="code"
       height={260} />
-
-
+  },
+  {
+    name: 'Mermaid — porosity diagnostic',
+    description: 'Troubleshooting flowchart for porosity rendered via Mermaid.',
+    render: () =>
+    <ArtifactRenderer
+      type="mermaid"
+      title="Porosity Diagnostic"
+      code={porositySolvingMermaid}
+      source_pages="41,42"
+      height={420} />
+  },
+  {
+    name: 'Markdown — MIG setup card',
+    description: 'Procedure card rendered inline as styled markdown.',
+    render: () =>
+    <ArtifactRenderer
+      type="markdown"
+      title="MIG Setup — 240V"
+      code={migSetupMarkdown}
+      source_pages="8,9"
+      height={320} />
   }]
 
 };

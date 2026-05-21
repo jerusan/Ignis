@@ -14,10 +14,14 @@ export interface ChecklistStep {
   };
 }
 
-const ARTIFACT_PATTERN =
-  /<artifact\s+type="([^"]+)"\s+title="([^"]*)">([\s\S]*?)<\/artifact>/g;
+// Matches <artifact ...>...</artifact> regardless of attribute order.
+const ARTIFACT_PATTERN = /<artifact\b([^>]*)>([\s\S]*?)<\/artifact>/g;
 
-const SUPPORTED_TYPES = new Set<ArtifactType>(['react', 'svg', 'html', 'checklist']);
+const SUPPORTED_TYPES = new Set<ArtifactType>(['react', 'svg', 'html', 'checklist', 'mermaid', 'markdown']);
+
+function attr(attrString: string, name: string): string | undefined {
+  return new RegExp(`${name}="([^"]*)"`, 'i').exec(attrString)?.[1];
+}
 
 export function parseArtifacts(text: string): ChatArtifact[] {
   const artifacts: ChatArtifact[] = [];
@@ -25,14 +29,18 @@ export function parseArtifacts(text: string): ChatArtifact[] {
 
   let match: RegExpExecArray | null;
   while ((match = ARTIFACT_PATTERN.exec(text)) !== null) {
-    const type = match[1] as ArtifactType;
-    if (!SUPPORTED_TYPES.has(type)) continue;
+    const attrs = match[1];
+    const type = attr(attrs, 'type') as ArtifactType | undefined;
+    if (!type || !SUPPORTED_TYPES.has(type)) continue;
 
+    const agentId = attr(attrs, 'id');
     artifacts.push({
-      id: `artifact-${match.index}-${artifacts.length}`,
+      id: agentId ?? `artifact-${match.index}-${artifacts.length}`,
       type,
-      title: match[2] || 'Interactive artifact',
-      code: match[3].trim()
+      title: attr(attrs, 'title') ?? 'Interactive artifact',
+      code: match[2].trim(),
+      mode: attr(attrs, 'mode') as 'replace' | undefined,
+      source_pages: attr(attrs, 'source_pages'),
     });
   }
 
