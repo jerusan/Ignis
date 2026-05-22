@@ -217,8 +217,9 @@ export function GlobalMachineViewer() {
         const vpH  = vp.clientHeight;
         const vpW  = vp.clientWidth;
         const cntH = content.offsetHeight;
-        if (cntH < 10) return;
-        const fit = vpH / cntH;
+        const cntW = content.offsetWidth;
+        if (cntH < 10 || cntW < 10) return;
+        const fit = Math.min(vpH / cntH, vpW / cntW);
 
         const prevFitZoom = fitZoomRef.current;
         fitZoomRef.current = fit;

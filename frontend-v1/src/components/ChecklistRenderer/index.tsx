@@ -98,8 +98,17 @@ export default function ChecklistRenderer({ title, code }: Props) {
 
   if (parseError) {
     return (
-      <div className="px-3 py-2 text-xs text-red-400 font-mono">
-        Invalid checklist format — expected a JSON array.
+      <div className="flex items-center gap-3 px-4 py-8 w-full justify-center text-zinc-400">
+        <span className="text-[10px] font-mono tracking-widest uppercase text-amber-500/70">Generating</span>
+        <div className="flex gap-1">
+          {[0, 150, 300].map(delay => (
+            <span
+              key={delay}
+              className="w-1.5 h-1.5 rounded-full bg-amber-500/50 animate-bounce"
+              style={{ animationDelay: `${delay}ms` }}
+            />
+          ))}
+        </div>
       </div>
     );
   }

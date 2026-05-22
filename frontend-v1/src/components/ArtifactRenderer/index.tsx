@@ -96,14 +96,17 @@ function ArtifactRenderer({
   const [view, setView] = useState<'preview' | 'code'>(defaultView);
   const [error, setError] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
-  const { addPinnedArtifact, pinnedArtifacts } = useWorkbench();
+  const [isIframeLoaded, setIsIframeLoaded] = useState(false);
+  const { addPinnedArtifact, pinnedArtifacts, open, setActiveChecklist } = useWorkbench();
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
 
   // Compact chip — renders when the full artifact lives in the workbench panel.
   if (compact) {
     return (
-      <div
-        className="flex items-center gap-2.5 px-3 py-2 rounded-lg border w-full"
+      <button
+        type="button"
+        onClick={() => open()}
+        className="flex items-center gap-2.5 px-3 py-2 rounded-lg border w-full text-left cursor-pointer transition-colors hover:brightness-110"
         style={{
           borderColor: 'rgba(255,107,0,0.2)',
           backgroundColor: 'rgba(255,107,0,0.04)',
@@ -121,14 +124,14 @@ function ArtifactRenderer({
             pp.{source_pages}
           </span>
         )}
-        <span className="text-[9px] font-mono flex-shrink-0 flex items-center gap-1" style={{ color: '#3d4760' }}>
+        <span className="text-[9px] font-mono flex-shrink-0 flex items-center gap-1 hover:text-amber-500/80 transition-colors" style={{ color: '#3d4760' }}>
           <svg viewBox="0 0 14 14" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/>
             <line x1="5.5" y1="1.5" x2="5.5" y2="12.5"/>
           </svg>
-          Workbench
+          Open in Workbench
         </span>
-      </div>
+      </button>
     );
   }
 
@@ -137,7 +140,16 @@ function ArtifactRenderer({
       <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-background-subtle bg-background-muted/30 w-full">
         <span className="text-[9px] font-mono uppercase tracking-widest text-primary/70 flex-shrink-0">checklist</span>
         <span className="text-sm text-foreground truncate flex-1">{title}</span>
-        <span className="text-[10px] text-foreground-muted font-mono flex-shrink-0">→ Machine viewer</span>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveChecklist({ id: id || `checklist-${Date.now()}`, type, title, code, source_pages });
+            open();
+          }}
+          className="text-[10px] text-primary hover:text-primary-hover font-mono flex-shrink-0 transition-colors cursor-pointer"
+        >
+          → Open Machine Viewer
+        </button>
       </div>
     );
   }
@@ -147,10 +159,15 @@ function ArtifactRenderer({
   const usesPostMessage = type === 'react' || type === 'mermaid';
 
   useEffect(() => {
-    if (!usesPostMessage) return;
+    if (!usesPostMessage) {
+      setIsIframeLoaded(true);
+      return;
+    }
+    setIsIframeLoaded(false);
     const iframe = iframeRef.current;
     if (!iframe) return;
     const onLoad = () => {
+      setIsIframeLoaded(true);
       try {
         iframe.contentWindow?.postMessage({ type: 'render', code }, '*');
       } catch (e) {
@@ -223,6 +240,7 @@ function ArtifactRenderer({
             type="button"
             onClick={() => {
               setError(null);
+              setIsIframeLoaded(false);
               setRenderKey((k) => k + 1);
             }}
             className="p-1 rounded hover:bg-background-subtle text-foreground-muted"
@@ -251,6 +269,22 @@ function ArtifactRenderer({
               <div className="absolute inset-0 flex items-start gap-2 p-3 bg-error/10 text-error text-xs font-mono overflow-auto z-10">
                 <AlertTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <pre className="whitespace-pre-wrap break-words">{error}</pre>
+              </div>
+            )}
+            {!isIframeLoaded && !error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                <div className="flex items-center gap-3 text-foreground-subtle">
+                  <span className="text-[10px] font-mono tracking-widest uppercase">Rendering</span>
+                  <div className="flex gap-1">
+                    {[0, 150, 300].map(delay => (
+                      <span
+                        key={delay}
+                        className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce"
+                        style={{ animationDelay: `${delay}ms` }}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
             <iframe

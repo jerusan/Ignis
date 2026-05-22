@@ -260,7 +260,14 @@ function ChatPane({
                         </ReactMarkdown>
                       </div>
                     ) : (
-                      <span className="text-foreground-subtle">Working...</span>
+                      <div className="flex items-center gap-2 text-foreground-subtle py-1">
+                        <span className="text-sm font-medium">Working</span>
+                        <div className="flex gap-1">
+                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      </div>
                     )
                   ) : (
                     m.text
