@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { SendIcon, WifiOffIcon, BookOpenIcon, ChevronDownIcon } from 'lucide-react';
+import { SendIcon, WifiOffIcon, BookOpenIcon, ChevronDownIcon, WrenchIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Message from '../Message';
@@ -55,6 +55,8 @@ export interface ChatPaneProps {
   placeholder?: string;
   disabled?: boolean;
   emptyState?: React.ReactNode;
+  onWorkbenchToggle?: () => void;
+  workbenchOpen?: boolean;
 }
 
 function ReferenceImages({ images }: { images: ReferenceImage[] }) {
@@ -121,6 +123,8 @@ function ChatPane({
   placeholder = 'Ask about your Vulcan OmniPro 220…',
   disabled = false,
   emptyState,
+  onWorkbenchToggle,
+  workbenchOpen = false,
 }: ChatPaneProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -348,8 +352,22 @@ function ChatPane({
             disabled={disabled}
             rows={1}
             aria-label="Message Ignis"
-            className="flex-1 resize-none rounded-md border border-background-subtle bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:bg-background-muted disabled:cursor-not-allowed min-h-[40px] max-h-32"
+            className="flex-1 resize-none rounded-md border border-white/[.15] bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle focus:outline-none focus:ring-2 focus:ring-primary/60 focus:border-primary disabled:bg-background-muted disabled:cursor-not-allowed min-h-[40px] max-h-32 transition-colors"
           />
+          {onWorkbenchToggle && (
+            <button
+              type="button"
+              onClick={onWorkbenchToggle}
+              aria-label={workbenchOpen ? 'Close workbench' : 'Open workbench'}
+              className={`w-9 h-9 flex-shrink-0 rounded-md border flex items-center justify-center transition-all duration-150 ${
+                workbenchOpen
+                  ? 'border-primary/50 bg-primary/10 text-primary'
+                  : 'border-white/[.15] bg-secondary text-foreground-subtle hover:text-foreground hover:border-white/30'
+              }`}
+            >
+              <WrenchIcon className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="submit"
             disabled={disabled || !input.trim()}

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ZapIcon, GaugeIcon, AlertCircleIcon, SlidersHorizontalIcon } from 'lucide-react';
 import ChatPane, {
   ChatMessage,
   ChatToolCall
@@ -15,11 +16,11 @@ import { useWorkbench } from '../WorkbenchOverlay';
 const INPUT_COST_PER_TOKEN = 3 / 1_000_000;
 const OUTPUT_COST_PER_TOKEN = 15 / 1_000_000;
 
-const STARTER_PROMPTS = [
-  'What polarity setup do I need for TIG welding?',
-  "What's the duty cycle for MIG at 200A on 240V?",
-  "I'm getting porosity in flux-cored welds.",
-  'Show me the wire feed setup.'
+const STARTER_PROMPTS: { text: string; Icon: React.ElementType }[] = [
+  { text: 'What polarity setup do I need for TIG welding?', Icon: ZapIcon },
+  { text: "What's the duty cycle for MIG at 200A on 240V?", Icon: GaugeIcon },
+  { text: "I'm getting porosity in flux-cored welds.", Icon: AlertCircleIcon },
+  { text: 'Show me the wire feed setup.', Icon: SlidersHorizontalIcon },
 ];
 
 function nowLabel(): string {
@@ -122,31 +123,50 @@ function SetupCompleteCard({ title, onDismiss }: { title: string; onDismiss: () 
 
 function EmptyState({ onPrompt }: { onPrompt: (prompt: string) => void }) {
   return (
-    <div className="max-w-2xl px-4 text-left">
-      <img src="/ignis-logo.svg" alt="Ignis" className="mb-5 h-10 w-auto" />
-      <h2 className="font-heading text-2xl font-semibold" style={{ color: 'var(--foreground)' }}>
-        Ignis technician console
+    <div className="max-w-sm w-full px-4 py-2 text-left">
+      {/* Brand lockup */}
+      <div className="flex items-center gap-2.5 mb-7">
+        <img src="/ignis-logo.svg" alt="Ignis" className="h-5 w-auto flex-shrink-0" />
+        <div className="w-px h-3.5 flex-shrink-0 bg-white/10" />
+        <span className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: 'rgba(255,107,0,0.7)' }}>
+          Technician Assistant
+        </span>
+      </div>
+
+      {/* Product title */}
+      <h2
+        className="font-heading text-xl font-semibold mb-1.5"
+        style={{ color: '#e6e9ef', letterSpacing: '-0.01em' }}
+      >
+        Vulcan OmniPro 220
       </h2>
-      <p className="mt-2 max-w-xl text-sm leading-6" style={{ color: 'var(--foreground-muted)' }}>
-        Ask about setup, polarity, duty cycle, troubleshooting, or manual
-        diagrams. Ignis will surface specs, diagnostic steps, diagrams, and
-        interactive artifacts directly in the chat.
+      <p className="text-sm leading-relaxed mb-7" style={{ color: '#5c6478' }}>
+        Describe a fault, ask about parameters, or request a guided diagnostic.
       </p>
-      <div className="mt-6 grid gap-2 sm:grid-cols-2">
-        {STARTER_PROMPTS.map((prompt) => (
+
+      {/* Section label */}
+      <p className="text-[9px] font-mono uppercase tracking-[0.2em] mb-2" style={{ color: '#2e3550' }}>
+        Suggested
+      </p>
+
+      {/* Suggestion cards */}
+      <div className="space-y-1.5">
+        {STARTER_PROMPTS.map(({ text, Icon }) => (
           <button
-            key={prompt}
+            key={text}
             type="button"
-            onClick={() => onPrompt(prompt)}
-            className="rounded-md px-3 py-2 text-left text-sm shadow-sm
-                       transition-colors hover:opacity-80"
-            style={{
-              border: '1px solid var(--background-subtle)',
-              backgroundColor: 'var(--background)',
-              color: 'var(--foreground)',
-            }}
+            onClick={() => onPrompt(text)}
+            className="group w-full flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-left
+                       border border-white/[.06] bg-white/[.02]
+                       hover:border-orange-500/30 hover:bg-orange-500/5
+                       transition-all duration-150"
           >
-            {prompt}
+            <span className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center bg-white/[.03]">
+              <Icon className="w-3.5 h-3.5 text-zinc-600 group-hover:text-orange-400 transition-colors duration-150" />
+            </span>
+            <span className="text-sm text-zinc-500 group-hover:text-zinc-300 transition-colors duration-150">
+              {text}
+            </span>
           </button>
         ))}
       </div>
@@ -156,7 +176,12 @@ function EmptyState({ onPrompt }: { onPrompt: (prompt: string) => void }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export function IgnisApp() {
+interface IgnisAppProps {
+  onToggleWorkbench?: () => void;
+  workbenchOpen?: boolean;
+}
+
+export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [offline, setOffline] = useState(
     typeof navigator !== 'undefined' ? !navigator.onLine : false
@@ -445,13 +470,42 @@ export function IgnisApp() {
   // Normal chat mode
   return (
     <div className="flex h-full min-h-0 flex-col" style={{ backgroundColor: '#0f1114' }}>
-      <header style={{ borderBottom: '1px solid #2a2f3b', backgroundColor: '#1a1d24' }}>
-        <div className="flex items-center gap-3 px-4 py-3">
-          <img src="/ignis-logo.svg" alt="Ignis" className="h-8 w-auto" />
-          <p className="text-xs" style={{ color: 'var(--foreground-muted)' }}>
-            Vulcan OmniPro 220 · technician assistant
-          </p>
+      <header
+        className="flex-shrink-0 flex items-center justify-between px-4"
+        style={{
+          height: 48,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backgroundColor: '#0f1012',
+          boxShadow: '0 1px 0 rgba(0,0,0,0.4)',
+        }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src="/ignis-logo.svg" alt="Ignis" className="h-5 w-auto flex-shrink-0" />
+          <div className="w-px h-3.5 flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
+          <span className="text-sm font-medium truncate" style={{ color: '#d4d8e4' }}>
+            Vulcan OmniPro 220
+          </span>
+          <span className="text-[9px] font-mono hidden sm:block uppercase tracking-widest" style={{ color: '#2e3448' }}>
+            · Assist
+          </span>
         </div>
+        {onToggleWorkbench && (
+          <button
+            onClick={onToggleWorkbench}
+            title={workbenchOpen ? 'Close machine viewer' : 'Open machine viewer'}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-[10px] font-mono uppercase tracking-wider transition-all duration-150 ${
+              workbenchOpen
+                ? 'border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/[.15]'
+                : 'border-zinc-800/80 text-zinc-600 hover:border-zinc-700 hover:text-zinc-300'
+            }`}
+          >
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1.5" y="1.5" width="13" height="13" rx="1.5"/>
+              <line x1="6.5" y1="1.5" x2="6.5" y2="14.5"/>
+            </svg>
+            <span>{workbenchOpen ? 'Close' : 'View'}</span>
+          </button>
+        )}
       </header>
 
       {/* Setup-complete banner — pinned above chat after wizard finishes */}
