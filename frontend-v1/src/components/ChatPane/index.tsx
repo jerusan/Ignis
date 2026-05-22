@@ -29,6 +29,7 @@ export interface ChatArtifact {
   code: string;
   mode?: 'replace';
   source_pages?: string;
+  widgetName?: string;
 }
 export interface ChatToolCall {
   id: string;
@@ -328,6 +329,7 @@ function ChatPane({
                         title={a.title}
                         code={a.code}
                         source_pages={a.source_pages}
+                        widgetName={a.widgetName}
                         compact={WORKBENCH_ARTIFACT_TYPES.has(a.type)}
                       />
                     ))}

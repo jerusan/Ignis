@@ -2,6 +2,9 @@ import type { ArtifactType } from '../components/ArtifactRenderer';
 import type { ChatArtifact } from '../components/ChatPane';
 import type { MachineView } from '../components/SpatialViewport';
 
+// Re-export so consumers can reference it without importing ArtifactRenderer
+export type { ArtifactType };
+
 // ── Checklist step schema (emitted by the agent in checklist artifacts) ────────
 export interface ChecklistStep {
   id: string;
@@ -17,13 +20,13 @@ export interface ChecklistStep {
 // Matches <artifact ...>...</artifact> regardless of attribute order.
 const ARTIFACT_PATTERN = /<artifact\b([^>]*)>([\s\S]*?)<\/artifact>/g;
 
-const SUPPORTED_TYPES = new Set<ArtifactType>(['react', 'svg', 'html', 'checklist', 'mermaid', 'markdown']);
+const SUPPORTED_TYPES = new Set<ArtifactType>(['react', 'svg', 'html', 'checklist', 'mermaid', 'markdown', 'widget']);
 
 /**
  * Artifact types that belong in the workbench panel (right side), not inline in chat.
  * These render as compact chips in the chat stream and full-size in the workbench canvas.
  */
-export const WORKBENCH_ARTIFACT_TYPES = new Set<ArtifactType>(['react', 'svg', 'mermaid', 'html']);
+export const WORKBENCH_ARTIFACT_TYPES = new Set<ArtifactType>(['react', 'svg', 'mermaid', 'html', 'widget']);
 
 function attr(attrString: string, name: string): string | undefined {
   return new RegExp(`${name}="([^"]*)"`, 'i').exec(attrString)?.[1];
@@ -47,6 +50,7 @@ export function parseArtifacts(text: string): ChatArtifact[] {
       code: match[2].trim(),
       mode: attr(attrs, 'mode') as 'replace' | undefined,
       source_pages: attr(attrs, 'source_pages'),
+      widgetName: attr(attrs, 'name'),
     });
   }
 

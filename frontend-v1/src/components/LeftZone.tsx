@@ -316,7 +316,7 @@ export function LeftZone({ isPinned, onTogglePin, onClose }: LeftZoneProps = {})
                                 >✕</button>
                             </div>
                             <div className="p-1.5">
-                                <ArtifactRenderer type={a.type} title={a.title} code={a.code} height={160} />
+                                <ArtifactRenderer type={a.type} title={a.title} code={a.code} height={160} widgetName={a.widgetName} />
                             </div>
                         </div>
                     ))}

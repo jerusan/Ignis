@@ -246,14 +246,13 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
         })) {
           if (event.type === 'text_delta') {
             finalText += event.text;
-            const spatial = parseSpatialContext(finalText);
-            if (spatial) setSpatialContext(spatial);
+            // Do NOT apply spatial context mid-stream — defer to the finally block
+            // so we can suppress it when a widget artifact is present in the same response.
             setMessages((current) =>
               updateAssistant(current, assistantId, (message) => ({
                 ...message,
                 text: finalText,
                 artifacts: parseArtifacts(finalText),
-                spatialContext: spatial ?? message.spatialContext,
               }))
             );
           }
@@ -310,12 +309,24 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
           { role: 'assistant', content: finalText }
         ];
         const finalArtifacts = parseArtifacts(finalText);
+        const hasWidget = finalArtifacts.some(a => a.type === 'widget');
+
+        // Widget responses are self-contained — suppress spatial highlight so the
+        // machine viewer doesn't open alongside the widget. For all other responses,
+        // apply spatial context now (deferred from streaming to avoid premature opens).
+        if (hasWidget) {
+          setSpatialContext(null);
+        } else {
+          const spatial = parseSpatialContext(finalText);
+          if (spatial) setSpatialContext(spatial);
+        }
+
         setMessages((current) =>
           updateAssistant(current, assistantId, (message) => ({
             ...message,
             streaming: false,
             artifacts: finalArtifacts,
-            spatialContext: parseSpatialContext(finalText) ?? message.spatialContext,
+            spatialContext: hasWidget ? null : (parseSpatialContext(finalText) ?? message.spatialContext),
           }))
         );
         const checklist = finalArtifacts.find((a) => a.type === 'checklist');

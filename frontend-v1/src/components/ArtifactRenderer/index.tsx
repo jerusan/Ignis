@@ -8,7 +8,8 @@ import {
   RefreshCwIcon } from
 'lucide-react';
 import { useWorkbench } from '../WorkbenchOverlay';
-export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist' | 'mermaid' | 'markdown';
+import { WIDGET_REGISTRY } from '../widgets';
+export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist' | 'mermaid' | 'markdown' | 'widget';
 export interface ArtifactRendererProps {
   id?: string;
   type: ArtifactType;
@@ -21,6 +22,8 @@ export interface ArtifactRendererProps {
   compact?: boolean;
   /** Fill the parent container vertically rather than using a fixed pixel height. */
   fillHeight?: boolean;
+  /** For type="widget": which pre-built component to render. */
+  widgetName?: string;
 }
 const SCRIPT_OPEN = '<' + 'script';
 const SCRIPT_CLOSE = '<' + '/script>';
@@ -47,10 +50,22 @@ SCRIPT_OPEN +
 "window.addEventListener('message', function(e) {" +
 "  if (e.data && e.data.type === 'render') {" +
 '    try {' +
-"      var transformed = Babel.transform(e.data.code, { presets: ['react'] }).code;" +
-"      var fn = new Function('React', 'ReactDOM', 'useState', 'useEffect', 'useRef', 'createElement', 'updateWorkbench', transformed + '; if (typeof App !== \"undefined\") ReactDOM.createRoot(document.getElementById(\"root\")).render(React.createElement(App));');" +
+// Pre-process: strip import statements and export keywords that break new Function()
+"      var raw = e.data.code;" +
+"      var cleaned = raw" +
+"        .replace(/^import\\s[\\s\\S]*?(?:from\\s+['\"][^'\"]*['\"]\\s*)?;?\\s*$/gm, '')" +
+"        .replace(/^export\\s+default\\s+/gm, '')" +
+"        .replace(/^export\\s+(function|class|const|let|var)/gm, '$1');" +
+// Try TypeScript+React presets (babel standalone includes both); fall back to React-only
+"      var transformed;" +
+"      try {" +
+"        transformed = Babel.transform(cleaned, { presets: ['react', 'typescript'], filename: 'app.tsx' }).code;" +
+"      } catch (_) {" +
+"        transformed = Babel.transform(cleaned, { presets: ['react'] }).code;" +
+"      }" +
 "      var updateWorkbench = function(payload) { window.parent.postMessage({ type: 'ignis:updateWorkbench', payload: payload }, '*'); };" +
-'      fn(React, ReactDOM, React.useState, React.useEffect, React.useRef, React.createElement, updateWorkbench);' +
+"      var fn = new Function('React','ReactDOM','useState','useEffect','useRef','useMemo','useCallback','useReducer','createElement','updateWorkbench', transformed + '; if (typeof App !== \"undefined\") ReactDOM.createRoot(document.getElementById(\"root\")).render(React.createElement(App));');" +
+'      fn(React,ReactDOM,React.useState,React.useEffect,React.useRef,React.useMemo,React.useCallback,React.useReducer,React.createElement,updateWorkbench);' +
 '    } catch (err) {' +
 "      document.getElementById('root').innerHTML = '<pre id=\"error\">' + (err.message || String(err)) + '</pre>';" +
 '    }' +
@@ -91,6 +106,7 @@ function ArtifactRenderer({
   defaultView = 'preview',
   compact = false,
   fillHeight = false,
+  widgetName,
 }: ArtifactRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [view, setView] = useState<'preview' | 'code'>(defaultView);
@@ -150,6 +166,55 @@ function ArtifactRenderer({
         >
           → Open Machine Viewer
         </button>
+      </div>
+    );
+  }
+
+  // Pre-built widget — rendered natively (no iframe, full React context access).
+  if (type === 'widget') {
+    const Widget = widgetName ? WIDGET_REGISTRY[widgetName] : null;
+    let params: Record<string, unknown> = {};
+    try { params = JSON.parse(code); } catch { /* use empty params */ }
+
+    return (
+      <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full ${fillHeight ? 'flex flex-col h-full' : ''}`}>
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
+              widget
+            </span>
+            <span className="font-heading font-medium text-sm text-foreground truncate">{title}</span>
+            {source_pages && (
+              <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-background-subtle text-foreground-muted flex-shrink-0 whitespace-nowrap">
+                pp. {source_pages}
+              </span>
+            )}
+          </div>
+          {id && (
+            <button
+              type="button"
+              onClick={() => addPinnedArtifact({ id, type, title, code, source_pages, widgetName })}
+              disabled={isPinned}
+              className={`p-1 rounded hover:bg-background-subtle text-foreground-muted ${isPinned ? 'opacity-40 cursor-not-allowed' : ''}`}
+              aria-label={isPinned ? 'Already pinned' : 'Pin to workbench'}
+              title={isPinned ? 'Already pinned' : 'Pin to workbench'}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill={isPinned ? 'currentColor' : 'none'}
+                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 1h5v4.5l2 2.5H2.5l2-2.5V1zM7 8v5" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className={fillHeight ? 'flex-1 min-h-0 overflow-hidden' : ''} style={fillHeight ? undefined : { height }}>
+          {Widget
+            ? <Widget params={params} />
+            : (
+              <div className="flex items-center justify-center h-full p-6 text-center">
+                <p className="text-xs font-mono text-foreground-muted">Unknown widget: {widgetName ?? '(none)'}</p>
+              </div>
+            )
+          }
+        </div>
       </div>
     );
   }

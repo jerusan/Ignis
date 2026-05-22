@@ -653,6 +653,7 @@ export function GlobalMachineViewer() {
                         title={activeArtifact.title}
                         code={activeArtifact.code}
                         source_pages={activeArtifact.source_pages}
+                        widgetName={activeArtifact.widgetName}
                         fillHeight
                     />
                 </div>

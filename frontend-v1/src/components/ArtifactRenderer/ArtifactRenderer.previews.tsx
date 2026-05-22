@@ -70,6 +70,42 @@ const previews: ComponentPreviewModule = {
   importPath: 'components/ArtifactRenderer',
   previews: [
   {
+    name: 'Widget — DutyCycleCalculator (MIG 240V)',
+    description: 'Pre-built duty cycle widget — no iframe, native React.',
+    render: () =>
+    <ArtifactRenderer
+      type="widget"
+      widgetName="DutyCycleCalculator"
+      title="Duty Cycle Calculator"
+      code='{"process":"MIG","voltage":"240V"}'
+      source_pages="12,13"
+      height={360} />,
+  },
+  {
+    name: 'Widget — PolarityDiagram (PolarityConfigurator)',
+    description: 'Polarity widget — renders the full PolarityConfigurator panel component.',
+    render: () =>
+    <ArtifactRenderer
+      type="widget"
+      widgetName="PolarityDiagram"
+      title="Process Polarity & Gas"
+      code='{"process":"TIG"}'
+      source_pages="13,14,24,27"
+      height={420} />,
+  },
+  {
+    name: 'Widget — WireSettings (MIG)',
+    description: 'Pre-built wire settings configurator widget.',
+    render: () =>
+    <ArtifactRenderer
+      type="widget"
+      widgetName="WireSettings"
+      title="Wire Feed Settings"
+      code='{"process":"MIG"}'
+      source_pages="18,19"
+      height={420} />,
+  },
+  {
     name: 'React — duty cycle calculator',
     description:
     'Interactive React artifact rendered inside the sandboxed iframe.',
