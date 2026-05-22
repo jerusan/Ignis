@@ -86,12 +86,20 @@ export function MachineFullScreenModal({
   const drawPath =
     spatialContext.draw_path && activeView === spatialContext.view;
 
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       lastDist.current = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY,
       );
+    } else if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
     }
   }, []);
 
@@ -109,9 +117,27 @@ export function MachineFullScreenModal({
     }
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     lastDist.current = 0;
-  }, []);
+    if (touchStartRef.current && e.changedTouches.length === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+      const dt = Date.now() - touchStartRef.current.time;
+      
+      if (dt < 400 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && scale <= 1.05) {
+        const VIEWS: MachineView[] = ['front', 'interior', 'back'];
+        const currentIndex = VIEWS.indexOf(activeView);
+        if (dx > 0) {
+          const nextIndex = (currentIndex + 1) % VIEWS.length;
+          setActiveView(VIEWS[nextIndex]);
+        } else {
+          const prevIndex = (currentIndex - 1 + VIEWS.length) % VIEWS.length;
+          setActiveView(VIEWS[prevIndex]);
+        }
+      }
+    }
+    touchStartRef.current = null;
+  }, [activeView, scale]);
 
   const handleDoubleTap = useCallback(() => {
     setScale(prev => (prev > 1.1 ? 1 : 2));

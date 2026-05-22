@@ -262,13 +262,33 @@ export function GlobalMachineViewer() {
         el.addEventListener('wheel', handler, { passive: false });
         return () => el.removeEventListener('wheel', handler);
     }, [cancelFlyTo]);
+    // View switch with 150 ms cross-fade
+    const handleViewChange = useCallback((v: MachineView) => {
+        if (isModifyMode || v === activeView) return;
+        cancelFlyTo();
+        setViewOpacity(0);
+        setTimeout(() => {
+            setActiveView(v);
+            setWorkbenchTab('machine');
+            setHighlightedTargets([]);
+            setDrawPath(false);
+            setExportCode(null);
+            setSearchQuery('');
+            setViewOpacity(1);
+            requestAnimationFrame(() => {
+                setZoom(fitZoomRef.current);
+                setPan({ x: 0, y: 0 });
+            });
+        }, 150);
+    }, [isModifyMode, activeView, setActiveView, cancelFlyTo]);
+
 
     // ── Pan drag ─────────────────────────────────────────────────────────────
-    const panState = useRef<{ startX: number; startY: number; started: boolean; pointerId: number } | null>(null);
+    const panState = useRef<{ startX: number; startY: number; started: boolean; pointerId: number; startTime: number } | null>(null);
     const [isPanning, setIsPanning] = useState(false);
 
     const handlePanPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        panState.current = { startX: e.clientX, startY: e.clientY, started: false, pointerId: e.pointerId };
+        panState.current = { startX: e.clientX, startY: e.clientY, started: false, pointerId: e.pointerId, startTime: Date.now() };
     }, []);
 
     const handlePanPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -288,12 +308,29 @@ export function GlobalMachineViewer() {
     }, [cancelFlyTo]);
 
     const handlePanPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        if (panState.current?.started) {
-            (e.currentTarget as Element).releasePointerCapture(panState.current.pointerId);
+        const s = panState.current;
+        if (s?.started) {
+            (e.currentTarget as Element).releasePointerCapture(s.pointerId);
+            
+            const dx = e.clientX - s.startX;
+            const dy = e.clientY - s.startY;
+            const dt = Date.now() - s.startTime;
+            
+            if (dt < 400 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && zoomViewRef.current.zoom <= fitZoomRef.current * 1.05) {
+                const VIEWS: MachineView[] = ['front', 'interior', 'back'];
+                const currentIndex = VIEWS.indexOf(activeViewRef.current);
+                if (dx > 0) {
+                    const nextIndex = (currentIndex + 1) % VIEWS.length;
+                    handleViewChange(VIEWS[nextIndex]);
+                } else {
+                    const prevIndex = (currentIndex - 1 + VIEWS.length) % VIEWS.length;
+                    handleViewChange(VIEWS[prevIndex]);
+                }
+            }
         }
         panState.current = null;
         setIsPanning(false);
-    }, []);
+    }, [handleViewChange]);
 
     // ── Zoom buttons ─────────────────────────────────────────────────────────
     const zoomIn = useCallback(() => {
@@ -319,26 +356,6 @@ export function GlobalMachineViewer() {
         setZoom(fitZoomRef.current);
         setPan({ x: 0, y: 0 });
     }, [cancelFlyTo]);
-
-    // View switch with 150 ms cross-fade
-    const handleViewChange = useCallback((v: MachineView) => {
-        if (isModifyMode || v === activeView) return;
-        cancelFlyTo();
-        setViewOpacity(0);
-        setTimeout(() => {
-            setActiveView(v);
-            setWorkbenchTab('machine');
-            setHighlightedTargets([]);
-            setDrawPath(false);
-            setExportCode(null);
-            setSearchQuery('');
-            setViewOpacity(1);
-            requestAnimationFrame(() => {
-                setZoom(fitZoomRef.current);
-                setPan({ x: 0, y: 0 });
-            });
-        }, 150);
-    }, [isModifyMode, activeView, setActiveView, cancelFlyTo]);
 
     // ── Sync with agent spatial context ──────────────────────────────────────
     useEffect(() => {
