@@ -670,9 +670,13 @@ export function GlobalMachineViewer() {
                     style={{
                         flex: activeChecklist && !isModifyMode ? '3 0 0' : '1 1 0',
                         cursor: isPanning ? 'grabbing' : 'grab',
-                        backgroundColor: '#141418',
-                        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                        backgroundSize: '24px 24px',
+                        backgroundColor: '#121315',
+                        backgroundImage: `
+                            radial-gradient(circle at center, rgba(44,48,54,0.4) 0%, transparent 65%),
+                            linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                            linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)
+                        `,
+                        backgroundSize: '100% 100%, 32px 32px, 32px 32px',
                     }}
                     onPointerDown={handlePanPointerDown}
                     onPointerMove={handlePanPointerMove}
@@ -704,6 +708,7 @@ export function GlobalMachineViewer() {
                             pathDirection={pathDirection}
                             isModifyMode={isModifyMode}
                             isOverlay
+                            transparent
                             onAnnotationClick={handleAnnotationClick}
                             onSave={handleSave}
                             onDiscard={handleDiscard}
@@ -742,6 +747,7 @@ export function GlobalMachineViewer() {
                                     highlightedComponents={highlightedTargets}
                                     drawPath={false}
                                     isOverlay
+                                    transparent
                                 />
                             </div>
                             {/* Viewport window rectangle */}

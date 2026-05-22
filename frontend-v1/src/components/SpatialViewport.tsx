@@ -490,7 +490,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
             <img
                 src={imgSrc}
                 alt={imgAlt}
-                className="w-full h-auto object-contain block"
+                className="w-full h-auto object-contain block drop-shadow-[0_0_40px_rgba(255,255,255,0.08)]"
                 draggable={false}
             />
 
