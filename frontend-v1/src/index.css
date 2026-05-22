@@ -15,6 +15,32 @@
 
 /* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
 :root {
+  /* ── Ignis Dark Industrial Theme ────────────────────────────── */
+  --ignis-bg-base: #0a0b0e;
+  --ignis-bg-panel: #0f1012;
+  --ignis-bg-surface: #141418;
+  --ignis-bg-elevated: #1a1a20;
+
+  --ignis-accent-primary: #ff6b00;
+  --ignis-accent-dcep: #ff6b00;
+  --ignis-accent-dcen: #38bdf8;
+  --ignis-accent-warning: #fbbf24;
+  --ignis-accent-success: #a3e635;
+
+  --ignis-text-primary: #f8fafc;
+  --ignis-text-secondary: #d4d8e4;
+  --ignis-text-muted: #5c6478;
+  --ignis-text-disabled: #3d4760;
+
+  --ignis-border-subtle: rgba(255, 255, 255, 0.05);
+  --ignis-border-strong: rgba(255, 255, 255, 0.12);
+  --ignis-border-focus: rgba(255, 107, 0, 0.38);
+
+  --ignis-glow-primary: 0 0 16px rgba(255, 107, 0, 0.25);
+  --ignis-glow-dcep: 0 0 16px rgba(255, 107, 0, 0.25);
+  --ignis-glow-dcen: 0 0 16px rgba(56, 189, 248, 0.25);
+  --ignis-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.6);
+
   /* ── Brand accent — fire orange ──────────────────────────────── */
   --primary: #ff6b00;
   --primary-hover: #e55f00;

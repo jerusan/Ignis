@@ -24,3 +24,5 @@ data/raw_pages.json
 # OS
 .DS_Store
 Thumbs.db
+
+.agent/
