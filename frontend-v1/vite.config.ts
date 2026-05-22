@@ -7,9 +7,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/chat': 'http://localhost:8000',
-      '/assets': 'http://localhost:8000',
-      '/health': 'http://localhost:8000'
+      '/chat':          'http://localhost:8000',
+      '/assets':        'http://localhost:8000',
+      '/health':        'http://localhost:8000',
+      '/baseline-grid': 'http://localhost:8000',
     }
   }
 })

@@ -19,7 +19,8 @@ from pydantic import BaseModel
 from .agent import run_agent
 
 ROOT = Path(__file__).parent.parent
-ASSETS_DIR = ROOT / "assets"
+ASSETS_DIR  = ROOT / "assets"
+DATA_DIR    = ROOT / "data"
 
 app = FastAPI(title="Ignis", version="1.0.0")
 
@@ -51,6 +52,13 @@ class ChatRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/baseline-grid")
+def baseline_grid():
+    """Return the synergic parameter grid for the Vulcan OmniPro 220."""
+    with open(DATA_DIR / "baseline_grid.json", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.post("/chat")

@@ -9,6 +9,7 @@ import type { MachineView } from '../SpatialViewport';
 import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay';
 import ChecklistRenderer from '../ChecklistRenderer';
 import ArtifactRenderer from '../ArtifactRenderer';
+import BaselineGrid from '../BaselineGrid';
 
 const VIEW_LABELS: Record<MachineView, string> = {
     front:    'Front',
@@ -72,12 +73,17 @@ function ZoomHud({ displayPct, onZoomIn, onZoomOut, onFit }: ZoomHudProps) {
 export function GlobalMachineViewer() {
     const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact } = useWorkbench();
 
-    // ── Workbench panel tab: machine viewer or active artifact ───────────────
-    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');
+    // ── Workbench panel tab ───────────────────────────────────────────────────
+    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact' | 'baseline-grid'>('machine');
 
     useEffect(() => {
-        if (activeArtifact) setWorkbenchTab('artifact');
-        else setWorkbenchTab('machine');
+        if (activeArtifact) {
+            setWorkbenchTab('artifact');
+        } else {
+            // When an artifact is dismissed, go back to machine — but preserve the
+            // baseline-grid tab if the user was already there.
+            setWorkbenchTab(prev => prev === 'artifact' ? 'machine' : prev);
+        }
     }, [activeArtifact]);
 
     const [highlightedTargets, setHighlightedTargets] = useState<string[]>([]);
@@ -311,7 +317,7 @@ export function GlobalMachineViewer() {
                         background: 'linear-gradient(180deg, #1e1e25 0%, #181820 100%)',
                         boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.7)',
                         border: '1px solid rgba(255,255,255,0.07)',
-                        opacity: workbenchTab === 'artifact' ? 0.45 : 1,
+                        opacity: workbenchTab === 'machine' ? 1 : 0.45,
                         transition: 'opacity 0.2s',
                     }}
                 >
@@ -374,6 +380,25 @@ export function GlobalMachineViewer() {
                         </button>
                     </>
                 )}
+
+                {/* Grid tab — always visible */}
+                <div className="w-px h-4 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                <button
+                    onClick={() => setWorkbenchTab('baseline-grid')}
+                    className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
+                    style={workbenchTab === 'baseline-grid' ? {
+                        color: '#ff6b00',
+                        background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
+                        boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                    } : {
+                        color: '#5c6478',
+                        border: '1px solid transparent',
+                    }}
+                    title="Synergic parameter grid"
+                >
+                    Grid
+                </button>
             </div>
 
             {/* ── Artifact canvas (replaces machine view when active) ──────── */}
@@ -388,6 +413,13 @@ export function GlobalMachineViewer() {
                         source_pages={activeArtifact.source_pages}
                         fillHeight
                     />
+                </div>
+            )}
+
+            {/* ── Baseline grid canvas ─────────────────────────────────────── */}
+            {workbenchTab === 'baseline-grid' && (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <BaselineGrid />
                 </div>
             )}
 
