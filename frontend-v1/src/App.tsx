@@ -6,13 +6,13 @@ import { ComponentPreviewPage } from './components/ComponentPreviewPage';
 import { ComponentsPage } from './components/ComponentsPage';
 import { GlobalMachineViewer } from './components/GlobalMachineViewer';
 import { IgnisApp } from './components/IgnisApp';
-import { WorkbenchProvider } from './components/WorkbenchOverlay';
+import { WorkbenchProvider, useWorkbench } from './components/WorkbenchOverlay';
 const MIN_LEFT_PCT = 25;
 const MAX_LEFT_PCT = 72;
 const DEFAULT_LEFT_PCT = 42;
 
 function SplitPaneLayout() {
-    const [isRightOpen, setIsRightOpen] = useState(true);
+    const { isOpen: isRightOpen, toggleOpen: toggleRight } = useWorkbench();
     const [leftPct, setLeftPct] = useState(DEFAULT_LEFT_PCT);
     const [isDraggingDivider, setIsDraggingDivider] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -34,8 +34,6 @@ function SplitPaneLayout() {
         setIsDraggingDivider(false);
         e.currentTarget.releasePointerCapture(e.pointerId);
     }, []);
-
-    const toggleRight = useCallback(() => setIsRightOpen(v => !v), []);
 
     return (
         <div

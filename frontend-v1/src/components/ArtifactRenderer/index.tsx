@@ -17,6 +17,10 @@ export interface ArtifactRendererProps {
   source_pages?: string;
   height?: number | string;
   defaultView?: 'preview' | 'code';
+  /** Render as a compact workbench-redirect chip instead of the full artifact. */
+  compact?: boolean;
+  /** Fill the parent container vertically rather than using a fixed pixel height. */
+  fillHeight?: boolean;
 }
 const SCRIPT_OPEN = '<' + 'script';
 const SCRIPT_CLOSE = '<' + '/script>';
@@ -84,7 +88,9 @@ function ArtifactRenderer({
   code,
   source_pages,
   height = 360,
-  defaultView = 'preview'
+  defaultView = 'preview',
+  compact = false,
+  fillHeight = false,
 }: ArtifactRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [view, setView] = useState<'preview' | 'code'>(defaultView);
@@ -92,6 +98,39 @@ function ArtifactRenderer({
   const [renderKey, setRenderKey] = useState(0);
   const { addPinnedArtifact, pinnedArtifacts } = useWorkbench();
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
+
+  // Compact chip — renders when the full artifact lives in the workbench panel.
+  if (compact) {
+    return (
+      <div
+        className="flex items-center gap-2.5 px-3 py-2 rounded-lg border w-full"
+        style={{
+          borderColor: 'rgba(255,107,0,0.2)',
+          backgroundColor: 'rgba(255,107,0,0.04)',
+        }}
+      >
+        <span
+          className="font-mono text-[9px] uppercase tracking-widest flex-shrink-0 px-1.5 py-0.5 rounded"
+          style={{ backgroundColor: 'rgba(255,107,0,0.12)', color: 'rgba(255,107,0,0.85)' }}
+        >
+          {type}
+        </span>
+        <span className="text-sm truncate flex-1" style={{ color: '#d4d8e4' }}>{title}</span>
+        {source_pages && (
+          <span className="font-mono text-[9px] flex-shrink-0" style={{ color: '#3d4760' }}>
+            pp.{source_pages}
+          </span>
+        )}
+        <span className="text-[9px] font-mono flex-shrink-0 flex items-center gap-1" style={{ color: '#3d4760' }}>
+          <svg viewBox="0 0 14 14" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1.5" y="1.5" width="11" height="11" rx="1.5"/>
+            <line x1="5.5" y1="1.5" x2="5.5" y2="12.5"/>
+          </svg>
+          Workbench
+        </span>
+      </div>
+    );
+  }
 
   if (type === 'checklist') {
     return (
@@ -130,8 +169,8 @@ function ArtifactRenderer({
       ? MERMAID_HTML
       : SANDBOX_HTML;
   return (
-    <div className="border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
+    <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full ${fillHeight ? 'flex flex-col h-full' : ''}`}>
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
             {type}
@@ -198,13 +237,16 @@ function ArtifactRenderer({
       {view === 'preview' ? (
         type === 'markdown' ? (
           <div
-            className="prose-ignis px-4 py-3 overflow-auto bg-background"
-            style={{ maxHeight: height }}
+            className={`prose-ignis px-4 py-3 overflow-auto bg-background ${fillHeight ? 'flex-1 min-h-0' : ''}`}
+            style={fillHeight ? undefined : { maxHeight: height }}
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{code}</ReactMarkdown>
           </div>
         ) : (
-          <div className="relative bg-background" style={{ height }}>
+          <div
+            className={`relative bg-background ${fillHeight ? 'flex-1 min-h-0' : ''}`}
+            style={fillHeight ? undefined : { height }}
+          >
             {error && (
               <div className="absolute inset-0 flex items-start gap-2 p-3 bg-error/10 text-error text-xs font-mono overflow-auto z-10">
                 <AlertTriangleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -223,8 +265,8 @@ function ArtifactRenderer({
         )
       ) : (
         <pre
-          className="font-mono text-xs leading-relaxed text-foreground bg-background-muted p-3 overflow-auto"
-          style={{ maxHeight: height }}
+          className={`font-mono text-xs leading-relaxed text-foreground bg-background-muted p-3 overflow-auto ${fillHeight ? 'flex-1 min-h-0' : ''}`}
+          style={fillHeight ? undefined : { maxHeight: height }}
         >
           <code>{code}</code>
         </pre>

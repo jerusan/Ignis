@@ -19,6 +19,12 @@ const ARTIFACT_PATTERN = /<artifact\b([^>]*)>([\s\S]*?)<\/artifact>/g;
 
 const SUPPORTED_TYPES = new Set<ArtifactType>(['react', 'svg', 'html', 'checklist', 'mermaid', 'markdown']);
 
+/**
+ * Artifact types that belong in the workbench panel (right side), not inline in chat.
+ * These render as compact chips in the chat stream and full-size in the workbench canvas.
+ */
+export const WORKBENCH_ARTIFACT_TYPES = new Set<ArtifactType>(['react', 'svg', 'mermaid', 'html']);
+
 function attr(attrString: string, name: string): string | undefined {
   return new RegExp(`${name}="([^"]*)"`, 'i').exec(attrString)?.[1];
 }

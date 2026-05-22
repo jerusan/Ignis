@@ -16,6 +16,7 @@ import {
   stripStreamingTags,
   parseReferenceImages,
   stripReferenceImages,
+  WORKBENCH_ARTIFACT_TYPES,
   type ReferenceImage,
   type SpatialContextTag,
   type PendingArtifact,
@@ -309,7 +310,7 @@ function ChatPane({
                   </div>
                 )}
 
-                {/* Artifacts — shown once the closing tag has been received */}
+                {/* Artifacts — workbench-bound types render as chips; markdown renders inline */}
                 {m.role === 'assistant' && artifacts.length > 0 && (
                   <div className="pl-11 space-y-3">
                     {artifacts.map(a => (
@@ -320,6 +321,7 @@ function ChatPane({
                         title={a.title}
                         code={a.code}
                         source_pages={a.source_pages}
+                        compact={WORKBENCH_ARTIFACT_TYPES.has(a.type)}
                       />
                     ))}
                   </div>

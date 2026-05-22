@@ -92,13 +92,16 @@ interface WorkbenchCtx {
     /** Session ID registered once by IgnisApp; consumed by ChecklistRenderer for telemetry. */
     sessionId:            string;
     registerSessionId:    (id: string) => void;
+    /** The artifact currently displayed as the primary workbench canvas (non-checklist). */
+    activeArtifact:       ChatArtifact | null;
+    setActiveArtifact:    (a: ChatArtifact | null) => void;
 }
 
 const WorkbenchContext = createContext<WorkbenchCtx | null>(null);
 
 // ── Provider ───────────────────────────────────────────────────────────────────
 export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
-    const [isOpen,    setIsOpen]    = useState(false);
+    const [isOpen,    setIsOpen]    = useState(true);
     const [isPinned,  setIsPinned]  = useState(false);
     const [telemetry, setTelemetry] = useState<WelderTelemetry | undefined>();
     const [artifacts, setArtifacts] = useState<ChatArtifact[]>([]);
@@ -115,7 +118,8 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
         process: null, voltage: null, material: null, thickness: null, wire_size: null,
     });
     const [turns, setTurns] = useState<DebugTurn[]>([]);
-    const [activeChecklist, setActiveChecklistRaw] = useState<ChatArtifact | null>(null);
+    const [activeChecklist,  setActiveChecklistRaw]  = useState<ChatArtifact | null>(null);
+    const [activeArtifact,   setActiveArtifactState] = useState<ChatArtifact | null>(null);
     const sessionIdRef = useRef<string>('');
 
     const open       = useCallback(() => setIsOpen(true),      []);
@@ -156,6 +160,9 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
 
     const setActiveChecklist = useCallback((a: ChatArtifact | null) => {
         setActiveChecklistRaw(a);
+    }, []);
+    const setActiveArtifact = useCallback((a: ChatArtifact | null) => {
+        setActiveArtifactState(a);
     }, []);
     const registerSessionId = useCallback((id: string) => {
         sessionIdRef.current = id;
@@ -199,6 +206,7 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
                 appendAssistantConfirmation, registerAssistantConfirmationWriter,
                 activeChecklist, setActiveChecklist,
                 sessionId: sessionIdRef.current, registerSessionId,
+                activeArtifact, setActiveArtifact,
             }}
         >
             {children}

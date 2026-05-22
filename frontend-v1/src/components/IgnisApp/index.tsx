@@ -8,7 +8,7 @@ import WizardModeView, {
   WizardStep,
   parseTextWizardSteps,
 } from '../WizardModeView';
-import { parseArtifacts, parseSpatialContext } from '../../lib/artifacts';
+import { parseArtifacts, parseSpatialContext, WORKBENCH_ARTIFACT_TYPES } from '../../lib/artifacts';
 import { ApiMessage, streamChat } from '../../lib/chatApi';
 import { useWorkbench } from '../WorkbenchOverlay';
 
@@ -151,6 +151,7 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
     setArtifacts, setSpatialContext, setSessionState, addTurn,
     registerSendMessage, setActiveChecklist, activeChecklist,
     registerSessionId, registerAssistantConfirmationWriter,
+    setActiveArtifact, open: openWorkbench,
   } = useWorkbench();
 
   // ── Wizard state ─────────────────────────────────────────────────────────
@@ -319,6 +320,16 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
         );
         const checklist = finalArtifacts.find((a) => a.type === 'checklist');
         if (checklist) setActiveChecklist(checklist);
+
+        // Route workbench-bound artifacts to the right panel.
+        // Latest wins — if the agent re-emits the same id it replaces the previous canvas.
+        const workbenchCandidates = finalArtifacts.filter((a) => WORKBENCH_ARTIFACT_TYPES.has(a.type));
+        const workbenchArtifact = workbenchCandidates[workbenchCandidates.length - 1] ?? null;
+        if (workbenchArtifact) {
+          setActiveArtifact(workbenchArtifact);
+          openWorkbench();
+        }
+
         addTurn({
           id: `turn_${Date.now()}`,
           label: text.length > 46 ? `${text.slice(0, 43)}...` : text,
@@ -333,7 +344,7 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
         setIsStreaming(false);
       }
     },
-    [isStreaming, setSpatialContext, setSessionState, addTurn, setActiveChecklist]
+    [isStreaming, setSpatialContext, setSessionState, addTurn, setActiveChecklist, setActiveArtifact, openWorkbench]
   );
 
   useEffect(() => {

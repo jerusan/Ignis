@@ -8,6 +8,7 @@ import {
 import type { MachineView } from '../SpatialViewport';
 import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay';
 import ChecklistRenderer from '../ChecklistRenderer';
+import ArtifactRenderer from '../ArtifactRenderer';
 
 const VIEW_LABELS: Record<MachineView, string> = {
     front:    'Front',
@@ -69,7 +70,15 @@ function ZoomHud({ displayPct, onZoomIn, onZoomOut, onFit }: ZoomHudProps) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function GlobalMachineViewer() {
-    const { spatialContext, activeView, setActiveView, activeChecklist } = useWorkbench();
+    const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact } = useWorkbench();
+
+    // ── Workbench panel tab: machine viewer or active artifact ───────────────
+    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');
+
+    useEffect(() => {
+        if (activeArtifact) setWorkbenchTab('artifact');
+        else setWorkbenchTab('machine');
+    }, [activeArtifact]);
 
     const [highlightedTargets, setHighlightedTargets] = useState<string[]>([]);
     const [drawPath,           setDrawPath]           = useState(false);
@@ -199,6 +208,7 @@ export function GlobalMachineViewer() {
     const handleViewChange = useCallback((v: MachineView) => {
         if (isModifyMode) return;
         setActiveView(v);
+        setWorkbenchTab('machine');
         setHighlightedTargets([]);
         setDrawPath(false);
         setExportCode(null);
@@ -294,16 +304,19 @@ export function GlobalMachineViewer() {
                     backgroundColor: '#111215',
                 }}
             >
+                {/* Machine view selector */}
                 <div
                     className="relative flex rounded-md p-0.5 gap-0.5"
                     style={{
                         background: 'linear-gradient(180deg, #1e1e25 0%, #181820 100%)',
                         boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.7)',
                         border: '1px solid rgba(255,255,255,0.07)',
+                        opacity: workbenchTab === 'artifact' ? 0.45 : 1,
+                        transition: 'opacity 0.2s',
                     }}
                 >
                     {(['front', 'interior', 'back'] as MachineView[]).map(v => {
-                        const isActive = activeView === v;
+                        const isActive = activeView === v && workbenchTab === 'machine';
                         return (
                             <button
                                 key={v}
@@ -331,10 +344,55 @@ export function GlobalMachineViewer() {
                         );
                     })}
                 </div>
+
+                {/* Artifact tab — appears when agent pushes an artifact to the workbench */}
+                {activeArtifact && (
+                    <>
+                        <div className="w-px h-4 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                        <button
+                            onClick={() => setWorkbenchTab('artifact')}
+                            className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 min-w-0 max-w-[200px]"
+                            style={workbenchTab === 'artifact' ? {
+                                color: '#ff6b00',
+                                background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
+                                boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
+                                border: '1px solid rgba(255,255,255,0.07)',
+                            } : {
+                                color: '#5c6478',
+                                border: '1px solid transparent',
+                            }}
+                        >
+                            <span className="truncate">{activeArtifact.title}</span>
+                            <span
+                                onClick={(e) => { e.stopPropagation(); setActiveArtifact(null); }}
+                                role="button"
+                                aria-label="Close artifact"
+                                className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded text-zinc-700 hover:text-zinc-200 hover:bg-white/10 transition-all leading-none ml-0.5 cursor-pointer"
+                            >
+                                ×
+                            </span>
+                        </button>
+                    </>
+                )}
             </div>
 
+            {/* ── Artifact canvas (replaces machine view when active) ──────── */}
+            {workbenchTab === 'artifact' && activeArtifact && (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <ArtifactRenderer
+                        key={activeArtifact.id}
+                        id={activeArtifact.id}
+                        type={activeArtifact.type}
+                        title={activeArtifact.title}
+                        code={activeArtifact.code}
+                        source_pages={activeArtifact.source_pages}
+                        fillHeight
+                    />
+                </div>
+            )}
+
             {/* ── Zoom / pan canvas ────────────────────────────────────────── */}
-            <div className="flex-1 min-h-0 flex flex-col">
+            {workbenchTab === 'machine' && <div className="flex-1 min-h-0 flex flex-col">
                 {/* Viewport — shrinks to 60% when a checklist is active */}
                 <div
                     ref={viewportRef}
@@ -511,7 +569,7 @@ export function GlobalMachineViewer() {
                         </p>
                     </div>
                 )}
-            </div>
+            </div>}
         </div>
     );
 }
