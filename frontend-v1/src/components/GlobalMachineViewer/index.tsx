@@ -9,9 +9,6 @@ import type { MachineView } from '../SpatialViewport';
 import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay';
 import ChecklistRenderer from '../ChecklistRenderer';
 import ArtifactRenderer from '../ArtifactRenderer';
-import BaselineGrid from '../BaselineGrid';
-import AmperageDashboard from '../AmperageDashboard';
-import PolarityConfigurator from '../PolarityConfigurator';
 
 const VIEW_LABELS: Record<MachineView, string> = {
     front:    'Front',
@@ -79,7 +76,7 @@ export function GlobalMachineViewer() {
     const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact, sessionState } = useWorkbench();
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
-    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact' | 'baseline-grid' | 'amperage' | 'polarity'>('machine');
+    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');
 
     useEffect(() => {
         if (activeArtifact) {
@@ -587,60 +584,6 @@ export function GlobalMachineViewer() {
                     </>
                 )}
 
-                {/* Grid tab */}
-                <div className="w-px h-4 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }} />
-                <button
-                    onClick={() => setWorkbenchTab('baseline-grid')}
-                    className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
-                    style={workbenchTab === 'baseline-grid' ? {
-                        color: '#ff6b00',
-                        background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
-                        boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                    } : {
-                        color: '#5c6478',
-                        border: '1px solid transparent',
-                    }}
-                    title="Synergic parameter grid"
-                >
-                    Grid
-                </button>
-
-                {/* Power tab */}
-                <button
-                    onClick={() => setWorkbenchTab('amperage')}
-                    className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
-                    style={workbenchTab === 'amperage' ? {
-                        color: '#ff6b00',
-                        background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
-                        boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                    } : {
-                        color: '#5c6478',
-                        border: '1px solid transparent',
-                    }}
-                    title="Amperage & power envelope"
-                >
-                    Power
-                </button>
-
-                {/* Polarity tab */}
-                <button
-                    onClick={() => setWorkbenchTab('polarity')}
-                    className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
-                    style={workbenchTab === 'polarity' ? {
-                        color: '#ff6b00',
-                        background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
-                        boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                    } : {
-                        color: '#5c6478',
-                        border: '1px solid transparent',
-                    }}
-                    title="Process polarity & gas configurator"
-                >
-                    Polarity
-                </button>
             </div>
 
             {/* ── Artifact canvas ──────────────────────────────────────────── */}
@@ -656,27 +599,6 @@ export function GlobalMachineViewer() {
                         widgetName={activeArtifact.widgetName}
                         fillHeight
                     />
-                </div>
-            )}
-
-            {/* ── Baseline grid canvas ─────────────────────────────────────── */}
-            {workbenchTab === 'baseline-grid' && (
-                <div className="flex-1 min-h-0 overflow-hidden">
-                    <BaselineGrid />
-                </div>
-            )}
-
-            {/* ── Amperage / power envelope canvas ────────────────────────── */}
-            {workbenchTab === 'amperage' && (
-                <div className="flex-1 min-h-0 overflow-hidden">
-                    <AmperageDashboard />
-                </div>
-            )}
-
-            {/* ── Polarity configurator canvas ─────────────────────────────── */}
-            {workbenchTab === 'polarity' && (
-                <div className="flex-1 min-h-0 overflow-hidden">
-                    <PolarityConfigurator />
                 </div>
             )}
 
