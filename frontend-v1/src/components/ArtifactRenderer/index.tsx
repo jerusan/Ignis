@@ -93,13 +93,12 @@ function ArtifactRenderer({
   const { addPinnedArtifact, pinnedArtifacts } = useWorkbench();
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
 
-  // Checklist artifacts render in the Workbench panel (LeftZone).
   if (type === 'checklist') {
     return (
-      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/5 w-full">
-        <span className="text-[9px] font-mono uppercase tracking-widest text-amber-500 flex-shrink-0">checklist</span>
+      <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-background-subtle bg-background-muted/30 w-full">
+        <span className="text-[9px] font-mono uppercase tracking-widest text-primary/70 flex-shrink-0">checklist</span>
         <span className="text-sm text-foreground truncate flex-1">{title}</span>
-        <span className="text-[10px] text-foreground-muted font-mono flex-shrink-0">→ Workbench</span>
+        <span className="text-[10px] text-foreground-muted font-mono flex-shrink-0">→ Machine viewer</span>
       </div>
     );
   }

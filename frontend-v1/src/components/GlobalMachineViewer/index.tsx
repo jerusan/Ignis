@@ -7,6 +7,7 @@ import {
 } from '../SpatialViewport';
 import type { MachineView } from '../SpatialViewport';
 import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay';
+import ChecklistRenderer from '../ChecklistRenderer';
 
 const VIEW_LABELS: Record<MachineView, string> = {
     front:    'Front',
@@ -68,7 +69,7 @@ function ZoomHud({ displayPct, onZoomIn, onZoomOut, onFit }: ZoomHudProps) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function GlobalMachineViewer() {
-    const { spatialContext, activeView, setActiveView } = useWorkbench();
+    const { spatialContext, activeView, setActiveView, activeChecklist } = useWorkbench();
 
     const [highlightedTargets, setHighlightedTargets] = useState<string[]>([]);
     const [drawPath,           setDrawPath]           = useState(false);
@@ -334,14 +335,14 @@ export function GlobalMachineViewer() {
 
             {/* ── Zoom / pan canvas ────────────────────────────────────────── */}
             <div className="flex-1 min-h-0 flex flex-col">
-                {/* Viewport */}
+                {/* Viewport — shrinks to 60% when a checklist is active */}
                 <div
                     ref={viewportRef}
-                    className="flex-1 min-h-0 relative overflow-hidden"
+                    className="min-h-0 relative overflow-hidden"
                     style={{
+                        flex: activeChecklist && !isModifyMode ? '3 0 0' : '1 1 0',
                         cursor: isPanning ? 'grabbing' : 'grab',
                         backgroundColor: '#141418',
-                        // Subtle grid backdrop on the canvas
                         backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
                         backgroundSize: '24px 24px',
                     }}
@@ -482,8 +483,25 @@ export function GlobalMachineViewer() {
                     </div>
                 )}
 
-                {/* ── Hint bar — always visible, stable height ──────────── */}
-                {!isModifyMode && (
+                {/* ── Checklist controller — 40% of height when active ─── */}
+                {activeChecklist && !isModifyMode && (
+                    <div
+                        className="min-h-0 overflow-y-auto"
+                        style={{
+                            flex: '2 0 0',
+                            borderTop: '1px solid rgba(255,255,255,0.06)',
+                        }}
+                    >
+                        <ChecklistRenderer
+                            id={activeChecklist.id}
+                            title={activeChecklist.title}
+                            code={activeChecklist.code}
+                        />
+                    </div>
+                )}
+
+                {/* ── Hint bar — shown when no active checklist ─────────── */}
+                {!isModifyMode && !activeChecklist && (
                     <div
                         className="flex-shrink-0 px-5 py-3.5"
                         style={{ borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#0f1012' }}

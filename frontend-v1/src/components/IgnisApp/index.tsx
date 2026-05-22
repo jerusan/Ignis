@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ZapIcon, GaugeIcon, AlertCircleIcon, SlidersHorizontalIcon } from 'lucide-react';
 import ChatPane, {
   ChatMessage,
@@ -9,7 +9,6 @@ import WizardModeView, {
   parseTextWizardSteps,
 } from '../WizardModeView';
 import { parseArtifacts, parseSpatialContext } from '../../lib/artifacts';
-import type { ChecklistStep } from '../../lib/artifacts';
 import { ApiMessage, streamChat } from '../../lib/chatApi';
 import { useWorkbench } from '../WorkbenchOverlay';
 
@@ -75,47 +74,6 @@ function markToolDone(
 
   return calls.map((call, index) =>
     index === runningIndex ? { ...call, status: 'done', result } : call
-  );
-}
-
-// ── Setup-complete banner ─────────────────────────────────────────────────────
-
-function SetupCompleteCard({ title, onDismiss }: { title: string; onDismiss: () => void }) {
-  return (
-    <div
-      className="mx-4 mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 animate-slide-down"
-      style={{
-        backgroundColor: 'rgba(255,107,0,0.1)',
-        border: '1px solid rgba(255,107,0,0.3)',
-      }}
-    >
-      <div
-        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: '#ff6b00' }}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"
-             strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold" style={{ color: '#e6e9ef' }}>
-          Setup Complete
-        </p>
-        <p className="text-xs truncate" style={{ color: '#a3a9b8' }}>
-          {title} finished successfully
-        </p>
-      </div>
-      <button
-        onClick={onDismiss}
-        className="flex-shrink-0 text-xs w-6 h-6 rounded-full flex items-center justify-center
-                   transition-colors hover:opacity-70"
-        style={{ color: '#a3a9b8' }}
-        aria-label="Dismiss"
-      >
-        ✕
-      </button>
-    </div>
   );
 }
 
@@ -192,7 +150,7 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
   const {
     setArtifacts, setSpatialContext, setSessionState, addTurn,
     registerSendMessage, setActiveChecklist, activeChecklist,
-    registerSessionId,
+    registerSessionId, registerAssistantConfirmationWriter,
   } = useWorkbench();
 
   // ── Wizard state ─────────────────────────────────────────────────────────
@@ -202,31 +160,12 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
     steps: WizardStep[];
   } | null>(null);
   const [textWizardIdx, setTextWizardIdx] = useState(0);
-  const [completedTitle, setCompletedTitle] = useState<string | null>(null);
   // Tracks message IDs whose wizard was explicitly dismissed — prevents re-trigger after Exit
   const dismissedMessageIds = useRef<Set<string>>(new Set());
 
-  // Checklist-based wizard steps (parsed from the active checklist artifact)
-  const checklistSteps = useMemo<WizardStep[]>(() => {
-    if (!activeChecklist) return [];
-    try {
-      const parsed: unknown = JSON.parse(activeChecklist.code);
-      if (!Array.isArray(parsed)) return [];
-      return (parsed as ChecklistStep[]).map((s) => ({
-        text: s.text,
-        detail: s.detail,
-        spatial: s.spatial,
-      }));
-    } catch {
-      return [];
-    }
-  }, [activeChecklist]);
-
-  // Explicit step index for checklist wizard — not derived from spatialContext
-  const [checklistStepIdx, setChecklistStepIdx] = useState(0);
-
-  // Is the wizard overlay currently showing?
-  const isWizardMode = activeChecklist !== null || textWizard !== null;
+  // Is the wizard overlay currently showing? Checklist artifacts stay localized
+  // in the Workbench panel so chat layout does not jump during completion.
+  const isWizardMode = textWizard !== null;
 
   // ── Detect text-based wizard after streaming ends ─────────────────────────
   useEffect(() => {
@@ -405,27 +344,29 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
     registerSessionId(sessionId.current);
   }, [registerSessionId]);
 
+  useEffect(() => {
+    registerAssistantConfirmationWriter((text) => {
+      setMessages((current) => [
+        ...current,
+        {
+          id: makeId('msg'),
+          role: 'assistant',
+          text,
+          timestamp: nowLabel(),
+        },
+      ]);
+      history.current = [...history.current, { role: 'assistant', content: text }];
+    });
+  }, [registerAssistantConfirmationWriter]);
+
   // ── Wizard handlers ───────────────────────────────────────────────────────
 
   const handleWizardNext = useCallback(() => {
-    if (activeChecklist) {
-      const isLast = checklistStepIdx === checklistSteps.length - 1;
-      if (isLast) {
-        const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-        if (lastAssistant) dismissedMessageIds.current.add(lastAssistant.id);
-        const title = activeChecklist.title;
-        setActiveChecklist(null);
-        setChecklistStepIdx(0);
-        setCompletedTitle(title);
-      } else {
-        setChecklistStepIdx((i) => i + 1);
-      }
-    } else if (textWizard) {
+    if (textWizard) {
       const isLast = textWizardIdx === textWizard.steps.length - 1;
       if (isLast) {
         const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
         if (lastAssistant) dismissedMessageIds.current.add(lastAssistant.id);
-        setCompletedTitle(textWizard.title);
         setTextWizard(null);
         setTextWizardIdx(0);
       } else {
@@ -433,33 +374,29 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
       }
     }
   }, [
-    activeChecklist, checklistStepIdx, checklistSteps.length,
-    setActiveChecklist, textWizard, textWizardIdx, messages,
+    textWizard, textWizardIdx, messages,
   ]);
 
   const handleWizardExit = useCallback(() => {
     const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
     if (lastAssistant) dismissedMessageIds.current.add(lastAssistant.id);
-    setActiveChecklist(null);
-    setChecklistStepIdx(0);
     setTextWizard(null);
     setTextWizardIdx(0);
-  }, [setActiveChecklist, messages]);
+  }, [messages]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   // Wizard mode — full-screen step layout
   if (isWizardMode) {
-    const title = activeChecklist?.title ?? textWizard?.title ?? 'Procedure';
-    const steps = activeChecklist ? checklistSteps : (textWizard?.steps ?? []);
-    const stepIdx = activeChecklist ? checklistStepIdx : textWizardIdx;
+    const title = textWizard?.title ?? 'Procedure';
+    const steps = textWizard?.steps ?? [];
 
     return (
       <div className="flex h-full min-h-0 flex-col" style={{ backgroundColor: '#0f1114' }}>
         <WizardModeView
           title={title}
           steps={steps}
-          currentStepIdx={stepIdx}
+          currentStepIdx={textWizardIdx}
           onNext={handleWizardNext}
           onExit={handleWizardExit}
         />
@@ -507,14 +444,6 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
           </button>
         )}
       </header>
-
-      {/* Setup-complete banner — pinned above chat after wizard finishes */}
-      {completedTitle && (
-        <SetupCompleteCard
-          title={completedTitle}
-          onDismiss={() => setCompletedTitle(null)}
-        />
-      )}
 
       <main className="flex min-h-0 flex-1 flex-col">
         <section className="min-h-0 flex-1">

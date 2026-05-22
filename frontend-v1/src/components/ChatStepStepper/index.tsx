@@ -24,7 +24,9 @@ export function ChatStepStepper() {
     return idx >= 0 ? idx : 0;
   }, [steps, spatialContext]);
 
-  if (steps.length === 0) return null;
+  // spatialContext becomes null after the last step completes — hide rather than
+  // snap back to step 1 (which is what happens when currentIdx falls back to 0).
+  if (steps.length === 0 || !spatialContext) return null;
 
   const stepTitle = activeChecklist?.title ?? 'Procedure';
 

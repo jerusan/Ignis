@@ -83,6 +83,9 @@ interface WorkbenchCtx {
     sendMessage:          (text: string) => void;
     /** Called once by IgnisApp to bind its sendMessage fn into context. */
     registerSendMessage:  (fn: (text: string) => void) => void;
+    /** Appends a local assistant confirmation without starting a new agent turn. */
+    appendAssistantConfirmation:         (text: string) => void;
+    registerAssistantConfirmationWriter: (fn: (text: string) => void) => void;
     /** The currently active diagnostic checklist (set by IgnisApp on message finalize). */
     activeChecklist:      ChatArtifact | null;
     setActiveChecklist:   (a: ChatArtifact | null) => void;
@@ -137,11 +140,18 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     // sendMessage is registered once by IgnisApp; stored in a ref so callers
     // (e.g. ChecklistRenderer) can fire it without re-render overhead.
     const sendMessageRef = useRef<((text: string) => void) | null>(null);
+    const assistantConfirmationRef = useRef<((text: string) => void) | null>(null);
     const registerSendMessage = useCallback((fn: (text: string) => void) => {
         sendMessageRef.current = fn;
     }, []);
     const sendMessage = useCallback((text: string) => {
         sendMessageRef.current?.(text);
+    }, []);
+    const registerAssistantConfirmationWriter = useCallback((fn: (text: string) => void) => {
+        assistantConfirmationRef.current = fn;
+    }, []);
+    const appendAssistantConfirmation = useCallback((text: string) => {
+        assistantConfirmationRef.current?.(text);
     }, []);
 
     const setActiveChecklist = useCallback((a: ChatArtifact | null) => {
@@ -186,6 +196,7 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
                 sessionState, setSessionState,
                 turns, addTurn,
                 sendMessage, registerSendMessage,
+                appendAssistantConfirmation, registerAssistantConfirmationWriter,
                 activeChecklist, setActiveChecklist,
                 sessionId: sessionIdRef.current, registerSessionId,
             }}

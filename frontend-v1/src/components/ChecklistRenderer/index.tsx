@@ -1,12 +1,13 @@
 // frontend/src/components/ChecklistRenderer/index.tsx
 //
-// Renders a stateful interactive diagnostic checklist from a JSON artifact.
-// Each step can:
-//   - Be hovered to preview its spatial context in the LeftZone viewport
-//   - Be checked to mark it done, advance the viewport, and send a
-//     completion message back to the agent
+// Task-Centric Pane controller. Renders a vertical accordion-wizard where:
+//   - Pending steps are collapsed and dimmed
+//   - The active (first uncompleted) step is expanded with amber highlight
+//   - Completed steps show a green check and collapse
+//   - When all done the panel transitions to a "Machine Ready" summary
 //
 import { useState, useCallback, useEffect } from 'react';
+import { CheckCircle2, RotateCcw } from 'lucide-react';
 import type { ChecklistStep } from '../../lib/artifacts';
 import { silentChecklistStep } from '../../lib/chatApi';
 import { useWorkbench } from '../WorkbenchOverlay';
@@ -14,23 +15,18 @@ import { useWorkbench } from '../WorkbenchOverlay';
 interface Props {
   id?: string;
   title: string;
-  code: string; // raw JSON string containing ChecklistStep[]
+  code: string;
 }
 
-function StepSpatialBadge({ step }: { step: ChecklistStep }) {
+function SpatialBadge({ step }: { step: ChecklistStep }) {
   if (!step.spatial) return null;
-  const { view, highlights, draw_path } = step.spatial;
+  const { view, highlights } = step.spatial;
   return (
-    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary/70 border border-primary/20 mt-1">
-      {draw_path && (
-        <svg className="w-2 h-2 flex-shrink-0" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M1 7 L7 1" strokeDasharray="2 1" />
-        </svg>
-      )}
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400/80 border border-amber-500/20 mt-1.5">
       <span className="opacity-60">{view}</span>
       <span className="opacity-30">·</span>
       {highlights.slice(0, 2).map(h => (
-        <span key={h} className="opacity-80">{h.replace(/_/g, ' ')}</span>
+        <span key={h}>{h.replace(/_/g, ' ')}</span>
       ))}
       {highlights.length > 2 && <span className="opacity-50">+{highlights.length - 2}</span>}
     </span>
@@ -38,28 +34,25 @@ function StepSpatialBadge({ step }: { step: ChecklistStep }) {
 }
 
 export default function ChecklistRenderer({ title, code }: Props) {
-  const { setSpatialContext, sessionId } = useWorkbench();
+  const { setSpatialContext, sessionId, setActiveChecklist } = useWorkbench();
 
-  const [steps, setSteps]       = useState<ChecklistStep[]>([]);
+  const [steps, setSteps]         = useState<ChecklistStep[]>([]);
   const [parseError, setParseError] = useState(false);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  // Track the most recently auto-focused step (for ring highlight)
-  const [focusedId, setFocusedId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const parsed: unknown = JSON.parse(code);
       if (Array.isArray(parsed)) {
-        setSteps(parsed as ChecklistStep[]);
-        // Auto-focus the first step's spatial context
-        const first = (parsed as ChecklistStep[])[0];
+        const list = parsed as ChecklistStep[];
+        setSteps(list);
+        const first = list[0];
         if (first?.spatial) {
           setSpatialContext({
             view: first.spatial.view,
             highlights: first.spatial.highlights,
             draw_path: first.spatial.draw_path,
           });
-          setFocusedId(first.id);
         }
       } else {
         setParseError(true);
@@ -67,66 +60,27 @@ export default function ChecklistRenderer({ title, code }: Props) {
     } catch {
       setParseError(true);
     }
-  // Only run on mount / code change — not when setSpatialContext ref changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
-  // Preview a step's spatial context on hover
-  const handleHover = useCallback((step: ChecklistStep) => {
-    if (!step.spatial) return;
-    setSpatialContext({
-      view: step.spatial.view,
-      highlights: step.spatial.highlights,
-      draw_path: step.spatial.draw_path,
-    });
-    setFocusedId(step.id);
-  }, [setSpatialContext]);
-
-  // Check a step: mark done, advance spatial to next step, send completion event
-  const handleCheck = useCallback((step: ChecklistStep) => {
+  const handleComplete = useCallback((step: ChecklistStep) => {
     setCompleted(prev => {
       const next = new Set(prev);
       next.add(step.id);
-
-      // Find the first step that isn't in the new completed set
       const nextStep = steps.find(s => !next.has(s.id));
-      if (nextStep) {
-        if (nextStep.spatial) {
-          setSpatialContext({
-            view: nextStep.spatial.view,
-            highlights: nextStep.spatial.highlights,
-            draw_path: nextStep.spatial.draw_path,
-          });
-        }
-        setFocusedId(nextStep.id);
+      if (nextStep?.spatial) {
+        setSpatialContext({
+          view: nextStep.spatial.view,
+          highlights: nextStep.spatial.highlights,
+          draw_path: nextStep.spatial.draw_path,
+        });
       } else {
-        // All steps done
         setSpatialContext(null);
-        setFocusedId(null);
       }
-
       return next;
     });
-
     silentChecklistStep(sessionId, step.id, step.text);
   }, [steps, setSpatialContext, sessionId]);
-
-  // Uncheck a step: local reset only, revert spatial to that step
-  const handleUncheck = useCallback((step: ChecklistStep) => {
-    setCompleted(prev => {
-      const next = new Set(prev);
-      next.delete(step.id);
-      return next;
-    });
-    if (step.spatial) {
-      setSpatialContext({
-        view: step.spatial.view,
-        highlights: step.spatial.highlights,
-        draw_path: step.spatial.draw_path,
-      });
-    }
-    setFocusedId(step.id);
-  }, [setSpatialContext]);
 
   const handleReset = useCallback(() => {
     setCompleted(new Set());
@@ -137,142 +91,176 @@ export default function ChecklistRenderer({ title, code }: Props) {
         highlights: first.spatial.highlights,
         draw_path: first.spatial.draw_path,
       });
-      setFocusedId(first.id);
+    } else {
+      setSpatialContext(null);
     }
   }, [steps, setSpatialContext]);
 
   if (parseError) {
     return (
-      <div className="border border-error/30 rounded-lg px-3 py-2 text-xs text-error font-mono bg-error/5">
-        Invalid checklist format — expected a JSON array of steps.
+      <div className="px-3 py-2 text-xs text-red-400 font-mono">
+        Invalid checklist format — expected a JSON array.
       </div>
     );
   }
 
   const completedCount = completed.size;
-  const total = steps.length;
-  const progress = total > 0 ? (completedCount / total) * 100 : 0;
-  const allDone = completedCount === total && total > 0;
+  const total          = steps.length;
+  const allDone        = completedCount === total && total > 0;
+  const progress       = total > 0 ? (completedCount / total) * 100 : 0;
+  const activeStepId   = steps.find(s => !completed.has(s.id))?.id ?? null;
 
+  // ── Machine Ready summary ────────────────────────────────────────────────────
+  if (allDone) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-green-500/30 bg-green-500/10">
+          <CheckCircle2 className="h-7 w-7 text-green-500" />
+        </div>
+        <p className="text-sm font-bold tracking-tight" style={{ color: '#e6e9ef' }}>
+          Machine Ready
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#5c6478' }}>
+          {title} setup complete. All parameters confirmed.
+        </p>
+        <div className="mt-6 flex items-center gap-2">
+          <button
+            onClick={handleReset}
+            className="inline-flex items-center gap-1.5 rounded border border-zinc-700 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
+          >
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
+            Reset Setup
+          </button>
+          <button
+            onClick={() => setActiveChecklist(null)}
+            className="inline-flex items-center gap-1.5 rounded border border-zinc-700 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active wizard ────────────────────────────────────────────────────────────
   return (
-    <div className="border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full">
-
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
+    <div>
+      {/* Header */}
+      <div
+        className="sticky top-0 z-10 flex items-center justify-between px-3 py-2"
+        style={{
+          backgroundColor: '#141418',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+        }}
+      >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
-            checklist
+          <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400 animate-pulse" />
+          <span
+            className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] flex-shrink-0"
+            style={{ color: 'rgba(251,191,36,0.85)' }}
+          >
+            Setup
           </span>
-          <span className="font-heading font-medium text-sm text-foreground truncate">
+          <span
+            className="text-xs font-medium truncate"
+            style={{ color: '#d4d8e4' }}
+          >
             {title}
           </span>
         </div>
-        <span className="text-[11px] font-mono text-foreground-muted flex-shrink-0 ml-2 tabular-nums">
+        <span className="flex-shrink-0 text-[10px] font-mono tabular-nums" style={{ color: '#3d4760' }}>
           {completedCount}/{total}
         </span>
       </div>
 
-      {/* ── Progress bar ────────────────────────────────────────────────── */}
-      <div className="h-1 bg-background-subtle">
+      {/* Progress bar */}
+      <div className="h-px bg-zinc-800">
         <div
-          className="h-full bg-primary transition-all duration-500 ease-out"
+          className="h-full bg-amber-500 transition-all duration-500 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
 
-      {/* ── Steps ───────────────────────────────────────────────────────── */}
-      <div className="divide-y divide-background-subtle">
+      {/* Step cards */}
+      <div className="px-2 py-2 space-y-1.5">
         {steps.map((step, i) => {
           const isDone    = completed.has(step.id);
-          const isFocused = focusedId === step.id && !isDone;
-          const isNext    = !isDone && steps.find(s => !completed.has(s.id))?.id === step.id;
+          const isActive  = step.id === activeStepId;
 
           return (
             <div
               key={step.id}
-              className={`flex items-start gap-3 px-3 py-3 transition-colors cursor-pointer group
-                ${isDone
-                  ? 'bg-background-muted/40 opacity-60'
-                  : isFocused
-                    ? 'bg-primary/5 ring-1 ring-inset ring-primary/20'
-                    : 'hover:bg-background-muted/30'
-                }`}
-              onMouseEnter={() => !isDone && handleHover(step)}
+              className={`rounded-lg border transition-all duration-300 ${
+                isDone
+                  ? 'border-green-500/20 bg-green-500/[0.025] opacity-75'
+                  : isActive
+                  ? 'border-amber-500/50 bg-amber-500/[0.05]'
+                  : 'border-zinc-800/50 bg-zinc-900/20 opacity-40'
+              }`}
+              style={isActive ? {
+                boxShadow: '0 0 16px rgba(245,158,11,0.08)',
+              } : undefined}
             >
-              {/* ── Checkbox ──────────────────────────────────────────── */}
-              <button
-                onClick={() => isDone ? handleUncheck(step) : handleCheck(step)}
-                className={`mt-0.5 w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center
-                  transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
-                  ${isDone
-                    ? 'bg-primary border-primary'
-                    : isNext
-                      ? 'border-primary animate-pulse'
-                      : 'border-background-subtle group-hover:border-primary/50'
-                  }`}
-                aria-label={isDone ? `Uncheck: ${step.text}` : `Mark done: ${step.text}`}
-                aria-checked={isDone}
-                role="checkbox"
-              >
-                {isDone && (
-                  <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none"
-                    stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="1.5,5 4,7.5 8.5,2" />
-                  </svg>
-                )}
-              </button>
+              <div className="flex items-start gap-3 px-3 py-3">
 
-              {/* ── Content ───────────────────────────────────────────── */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-[10px] font-mono tabular-nums flex-shrink-0
-                    ${isDone ? 'text-foreground-subtle' : 'text-foreground-muted'}`}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className={`text-sm font-medium leading-snug
-                    ${isDone ? 'line-through text-foreground-muted' : 'text-foreground'}`}>
-                    {step.text}
-                  </span>
+                {/* Status indicator */}
+                <div className="mt-0.5 flex-shrink-0">
+                  {isDone ? (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-green-500/40 bg-green-500/10">
+                      <svg
+                        className="h-2.5 w-2.5 text-green-500"
+                        viewBox="0 0 10 10" fill="none"
+                        stroke="currentColor" strokeWidth="2.2"
+                        strokeLinecap="round" strokeLinejoin="round"
+                      >
+                        <polyline points="1.5,5 4,7.5 8.5,2" />
+                      </svg>
+                    </div>
+                  ) : isActive ? (
+                    <div className="h-5 w-5 rounded-full border-2 border-amber-500 animate-pulse" />
+                  ) : (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700">
+                      <span className="text-[8px] font-mono text-zinc-600">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {step.detail && !isDone && (
-                  <p className="text-xs text-foreground-muted mt-1 ml-6 leading-relaxed">
-                    {step.detail}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-medium leading-snug ${
+                    isDone
+                      ? 'text-zinc-500'
+                      : isActive
+                      ? 'text-zinc-100'
+                      : 'text-zinc-500'
+                  }`}>
+                    {step.text}
                   </p>
-                )}
 
-                <div className="ml-6">
-                  <StepSpatialBadge step={step} />
+                  {isActive && step.detail && (
+                    <p className="mt-1 text-[11px] leading-relaxed" style={{ color: '#5c6478' }}>
+                      {step.detail}
+                    </p>
+                  )}
+
+                  {isActive && <SpatialBadge step={step} />}
+
+                  {isActive && (
+                    <button
+                      onClick={() => handleComplete(step)}
+                      className="mt-3 w-full rounded border border-amber-500/40 bg-amber-500/10 py-2 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 transition-all duration-150 hover:bg-amber-500/20 hover:border-amber-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+                    >
+                      Mark Complete
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* ── "Next" indicator ──────────────────────────────────── */}
-              {isNext && !isDone && (
-                <div className="flex-shrink-0 mt-1">
-                  <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-primary/60 bg-primary/10 px-1.5 py-0.5 rounded">
-                    Next
-                  </span>
-                </div>
-              )}
             </div>
           );
         })}
       </div>
-
-      {/* ── All done footer ─────────────────────────────────────────────── */}
-      {allDone && (
-        <div className="px-3 py-3 bg-primary/5 border-t border-primary/20 text-center">
-          <p className="text-sm font-medium text-foreground">
-            All steps complete — did that resolve the issue?
-          </p>
-          <button
-            onClick={handleReset}
-            className="mt-1 text-xs text-foreground-muted hover:text-foreground underline underline-offset-2 transition-colors"
-          >
-            Reset checklist
-          </button>
-        </div>
-      )}
     </div>
   );
 }

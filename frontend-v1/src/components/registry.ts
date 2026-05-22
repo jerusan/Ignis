@@ -3,6 +3,7 @@
 
 import type { ComponentPreviewModule } from './previewTypes';
 import __ArtifactRendererPreviews from './ArtifactRenderer/ArtifactRenderer.previews';
+import __ChecklistRendererPreviews from './ChecklistRenderer/ChecklistRenderer.previews';
 import __ChatPanePreviews from './ChatPane/ChatPane.previews';
 import __DebugPanelPreviews from './DebugPanel/DebugPanel.previews';
 import __IgnisAppPreviews from './IgnisApp/IgnisApp.previews';
@@ -259,6 +260,7 @@ Use a controlled \`state\` driven by the WebSocket lifecycle: \`idle\` → \`rec
 
 export const componentRegistry: ComponentPreviewModule[] = [
 __ArtifactRendererPreviews,
+__ChecklistRendererPreviews,
 __ChatPanePreviews,
 __DebugPanelPreviews,
 __IgnisAppPreviews,
