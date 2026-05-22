@@ -6,6 +6,7 @@ import {
   XIcon,
   CheckIcon,
   ChevronRightIcon,
+  WrenchIcon,
 } from 'lucide-react';
 import {
   SpatialViewport,
@@ -13,6 +14,7 @@ import {
   MachineView,
 } from '../SpatialViewport';
 import type { SpatialContextTag } from '../../lib/artifacts';
+import { useWorkbench } from '../WorkbenchOverlay';
 
 const VIEW_LABELS: Record<MachineView, string> = {
   front: 'Front',
@@ -234,6 +236,7 @@ export function InlineMachineVisual({
   stepLabel,
 }: InlineMachineVisualProps) {
   const [showFullScreen, setShowFullScreen] = useState(false);
+  const { setSpatialContext, open } = useWorkbench();
   const registry = REGISTRY_BY_VIEW[spatialContext.view];
   const highlightCount = spatialContext.highlights.length;
   const viewLabel = VIEW_FULL_LABELS[spatialContext.view];
@@ -243,9 +246,12 @@ export function InlineMachineVisual({
     return (
       <>
         <button
-          onClick={() => setShowFullScreen(true)}
+          onClick={() => {
+            setSpatialContext(spatialContext);
+            open();
+          }}
           className="flex items-center gap-2.5 w-full text-left px-3 py-2.5 rounded-lg border border-background-subtle bg-background-muted hover:bg-background-subtle transition-colors group min-h-[44px]"
-          aria-label={`Re-open ${viewLabel} diagram`}
+          aria-label={`Show ${viewLabel} on machine viewer`}
         >
           <ZapIcon className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
           <span className="text-xs font-medium text-foreground-muted">{viewLabel}</span>
@@ -259,7 +265,22 @@ export function InlineMachineVisual({
               <span className="text-xs font-mono text-foreground-subtle">{stepLabel}</span>
             </>
           )}
-          <MaximizeIcon className="w-3 h-3 text-foreground-subtle ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+          <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+            <span className="text-[10px] font-mono text-amber-500/80 opacity-0 group-hover:opacity-100 transition-opacity">
+              Show in Viewer
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFullScreen(true);
+              }}
+              title="Open full screen modal"
+              className="p-1 text-foreground-subtle hover:text-foreground hover:bg-zinc-800 rounded transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center min-w-[24px] min-h-[24px]"
+            >
+              <MaximizeIcon className="w-3.5 h-3.5" />
+            </button>
+            <WrenchIcon className="w-3.5 h-3.5 text-foreground-subtle group-hover:text-amber-500 transition-colors" />
+          </div>
         </button>
 
         {showFullScreen && (
@@ -292,18 +313,38 @@ export function InlineMachineVisual({
               </>
             )}
           </div>
-          <button
-            onClick={() => setShowFullScreen(true)}
-            className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 transition-colors px-2 py-1.5 rounded hover:bg-zinc-800 min-h-[36px] min-w-[36px] justify-center"
-            aria-label="Open full view"
-          >
-            <MaximizeIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Full view</span>
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={() => {
+                setSpatialContext(spatialContext);
+                open();
+              }}
+              className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors px-2 py-1 py-1.5 rounded hover:bg-zinc-800 min-h-[36px] justify-center"
+              aria-label="Show in Machine Viewer"
+            >
+              <WrenchIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Show in Viewer</span>
+            </button>
+            <button
+              onClick={() => setShowFullScreen(true)}
+              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 transition-colors px-2 py-1.5 rounded hover:bg-zinc-800 min-h-[36px] justify-center"
+              aria-label="Open full view"
+            >
+              <MaximizeIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Full view</span>
+            </button>
+          </div>
         </div>
 
         {/* ── Machine image ─────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-b-[0] bg-zinc-950">
+        <div
+          onClick={() => {
+            setSpatialContext(spatialContext);
+            open();
+          }}
+          className="relative overflow-hidden rounded-b-[0] bg-zinc-950 cursor-pointer group/image"
+          title="Click to show on interactive machine viewer"
+        >
           <SpatialViewport
             currentView={spatialContext.view}
             registry={registry}
@@ -313,6 +354,12 @@ export function InlineMachineVisual({
           />
           {/* Numbered badges float above the SpatialViewport SVG layer */}
           <CalloutBadges spatialContext={spatialContext} size={20} />
+          {/* Premium hover focus overlay */}
+          <div className="absolute inset-0 bg-amber-500/0 group-hover/image:bg-amber-500/[0.03] transition-all duration-200 pointer-events-none flex items-center justify-center">
+            <span className="bg-zinc-950/90 text-amber-400 text-[10px] font-mono px-2.5 py-1 rounded-md border border-amber-500/35 opacity-0 group-hover/image:opacity-100 transition-opacity duration-200 shadow-xl shadow-black/40">
+              Focus in Machine Viewer
+            </span>
+          </div>
         </div>
 
         {/* ── Callout list — compact horizontal pills ───────────────────── */}
@@ -323,12 +370,24 @@ export function InlineMachineVisual({
                 const pt = registry[key];
                 if (!pt) return null;
                 return (
-                  <div key={key} className="flex items-center gap-1.5">
-                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 font-mono font-bold text-[9px] flex items-center justify-center border border-amber-500/30">
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSpatialContext({
+                        view: spatialContext.view,
+                        highlights: [key],
+                        draw_path: false,
+                      });
+                      open();
+                    }}
+                    className="flex items-center gap-1.5 hover:bg-zinc-800/80 px-2 py-1 rounded transition-colors group/pill"
+                    title={`Focus ${pt.title} on machine viewer`}
+                  >
+                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 font-mono font-bold text-[9px] flex items-center justify-center border border-amber-500/30 group-hover/pill:bg-amber-500 group-hover/pill:text-zinc-950 transition-colors">
                       {idx + 1}
                     </span>
-                    <span className="text-xs font-medium text-zinc-300">{pt.title}</span>
-                  </div>
+                    <span className="text-xs font-medium text-zinc-300 group-hover/pill:text-white transition-colors">{pt.title}</span>
+                  </button>
                 );
               })}
             </div>

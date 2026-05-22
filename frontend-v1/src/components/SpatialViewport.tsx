@@ -243,6 +243,45 @@ type DragState =
     | { type: 'move'; key: string; offsetX: number; offsetY: number }
     | { type: 'resize'; key: string; centerX: number; centerY: number };
 
+// ─── Circuit path helpers ──────────────────────────────────────────────────
+
+function buildOrthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
+    const dx = x2 - x1, dy = y2 - y1;
+    if (Math.abs(dx) < 3) return `M ${x1} ${y1} L ${x2} ${y2}`;
+    if (Math.abs(dy) < 3) return `M ${x1} ${y1} L ${x2} ${y2}`;
+    const r = Math.min(18, Math.abs(dx) * 0.35, Math.abs(dy) * 0.35);
+    const sx = Math.sign(dx), sy = Math.sign(dy);
+    if (Math.abs(dx) >= Math.abs(dy)) {
+        return `M ${x1} ${y1} L ${x2 - r * sx} ${y1} Q ${x2} ${y1} ${x2} ${y1 + r * sy} L ${x2} ${y2}`;
+    }
+    return `M ${x1} ${y1} L ${x1} ${y2 - r * sy} Q ${x1} ${y2} ${x1 + r * sx} ${y2} L ${x2} ${y2}`;
+}
+
+function segmentMidpoints(
+    x1: number, y1: number, x2: number, y2: number
+): Array<{ cx: number; cy: number; angle: number }> {
+    if (Math.abs(x2 - x1) >= Math.abs(y2 - y1)) {
+        return [
+            { cx: (x1 + x2) / 2, cy: y1, angle: x2 > x1 ? 0 : 180 },
+            { cx: x2, cy: (y1 + y2) / 2, angle: y2 > y1 ? 90 : 270 },
+        ];
+    }
+    return [
+        { cx: x1, cy: (y1 + y2) / 2, angle: y2 > y1 ? 90 : 270 },
+        { cx: (x1 + x2) / 2, cy: y2, angle: x2 > x1 ? 0 : 180 },
+    ];
+}
+
+function arrowPath(cx: number, cy: number, angleDeg: number): string {
+    const a = (angleDeg * Math.PI) / 180;
+    const tipX = cx + Math.cos(a) * 10, tipY = cy + Math.sin(a) * 10;
+    const b1x = cx - Math.cos(a) * 4 + Math.sin(a) * 6;
+    const b1y = cy - Math.sin(a) * 4 - Math.cos(a) * 6;
+    const b2x = cx - Math.cos(a) * 4 - Math.sin(a) * 6;
+    const b2y = cy - Math.sin(a) * 4 + Math.cos(a) * 6;
+    return `M ${tipX} ${tipY} L ${b1x} ${b1y} L ${b2x} ${b2y} Z`;
+}
+
 // ─── Props ─────────────────────────────────────────────────────────────────
 interface SpatialViewportProps {
     /** Registry keys to highlight. Spotlights those components and darkens the rest. */
@@ -252,6 +291,12 @@ interface SpatialViewportProps {
      * Defaults to false — must be explicitly set for connection/wiring explanations.
      */
     drawPath?: boolean;
+    /** Upgrade draw_path to animated orthogonal routing with arrowheads. */
+    drawPathAnimated?: boolean;
+    /** Current-flow direction for arrowhead orientation. Default 'forward'. */
+    pathDirection?: 'forward' | 'reverse';
+    /** Keys matching a search query — rendered with an orange pulse, distinct from agent amber. */
+    searchHighlights?: string[];
     registry?: Record<string, SpatialControlPoint>;
     onAnnotationClick?: (point: SpatialControlPoint) => void;
     isModifyMode?: boolean;
@@ -274,6 +319,9 @@ interface SpatialViewportProps {
 export const SpatialViewport: React.FC<SpatialViewportProps> = ({
     highlightedComponents,
     drawPath = false,
+    drawPathAnimated = false,
+    pathDirection = 'forward',
+    searchHighlights,
     registry: registryProp,
     onAnnotationClick,
     isModifyMode = false,
@@ -486,12 +534,20 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                     {/* ── CSS animations — instance-scoped march animation ─────── */}
                     <style>{`
                         @keyframes ${pfx}-march {
-                            from { stroke-dashoffset: 18; }
+                            from { stroke-dashoffset: 21; }
                             to   { stroke-dashoffset: 0; }
+                        }
+                        @keyframes ${pfx}-march-rev {
+                            from { stroke-dashoffset: 0; }
+                            to   { stroke-dashoffset: 21; }
                         }
                         @keyframes spotlight-breathe {
                             0%, 100% { opacity: 0.62; }
                             50%       { opacity: 0.70; }
+                        }
+                        @keyframes ${pfx}-search-pulse {
+                            0%, 100% { opacity: 0.7; r: 0; }
+                            50%       { opacity: 0; r: 1; }
                         }
                     `}</style>
                 </defs>
@@ -507,26 +563,42 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                 )}
 
                 {/* ── Circuit paths between highlighted components ────────────── */}
-                {circuitPairs.map(([from, to], i) => (
-                    <g key={i} filter={`url(#${pfx}-cg)`}>
-                        {/* Ambient glow line — amber */}
-                        <line
-                            x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                            stroke="rgba(245,158,11,0.25)"
-                            strokeWidth="14"
-                            strokeLinecap="round"
-                        />
-                        {/* Animated marching dashes — amber */}
-                        <line
-                            x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                            stroke={A_RING}
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeDasharray="12 6"
-                            style={{ animation: `${pfx}-march 0.6s linear infinite` }}
-                        />
-                    </g>
-                ))}
+                {circuitPairs.map(([from, to], i) => {
+                    if (drawPathAnimated) {
+                        const pathD = buildOrthogonalPath(from.x, from.y, to.x, to.y);
+                        const mids = segmentMidpoints(from.x, from.y, to.x, to.y);
+                        const arrows = pathDirection === 'reverse'
+                            ? mids.map(m => ({ ...m, angle: (m.angle + 180) % 360 }))
+                            : mids;
+                        const animName = pathDirection === 'reverse' ? `${pfx}-march-rev` : `${pfx}-march`;
+                        return (
+                            <g key={i} filter={`url(#${pfx}-cg)`}>
+                                <path d={pathD} stroke="rgba(245,158,11,0.22)" strokeWidth="12"
+                                    fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d={pathD} stroke={A_RING} strokeWidth="3"
+                                    fill="none" strokeLinecap="round" strokeLinejoin="round"
+                                    strokeDasharray="14 7"
+                                    style={{ animation: `${animName} 0.65s linear infinite` }}
+                                />
+                                {arrows.map((m, j) => (
+                                    <path key={j} d={arrowPath(m.cx, m.cy, m.angle)}
+                                        fill={A_DOT} opacity={0.85} />
+                                ))}
+                            </g>
+                        );
+                    }
+                    return (
+                        <g key={i} filter={`url(#${pfx}-cg)`}>
+                            <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                                stroke="rgba(245,158,11,0.25)" strokeWidth="14" strokeLinecap="round" />
+                            <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                                stroke={A_RING} strokeWidth="3" strokeLinecap="round"
+                                strokeDasharray="12 6"
+                                style={{ animation: `${pfx}-march 0.6s linear infinite` }}
+                            />
+                        </g>
+                    );
+                })}
 
                 {Object.entries(activeRegistry).map(([key, point]) => {
                     const isSelected = highlights.includes(key);
@@ -564,6 +636,17 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                             >
                                 {/* Generous hit zone — +20px for gloved-hand usability */}
                                 <circle cx={point.x} cy={point.y} r={point.radius + 20} fill="transparent" />
+
+                                {/* Search highlight pulse — orange, distinct from amber agent highlights */}
+                                {searchHighlights?.includes(key) && !isSelected && (
+                                    <circle cx={point.x} cy={point.y} r={point.radius + 16}
+                                        fill="none"
+                                        stroke="rgba(251,146,60,0.55)"
+                                        strokeWidth={2}
+                                        className="animate-ping"
+                                        style={{ transformOrigin: `${point.x}px ${point.y}px` }}
+                                    />
+                                )}
 
                                 {/* Ping halo — amber for agent highlights, orange for drag */}
                                 {(isSelected || (isDragging && draggingType === 'move')) && (

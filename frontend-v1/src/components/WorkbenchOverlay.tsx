@@ -109,9 +109,14 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     const [spatialContext,  setSpatialContext]  = useState<SpatialContextTag | null>(null);
     const [activeView,      setActiveView]      = useState<MachineView>('front');
 
-    // Auto-sync workbench view when the agent emits a spatial tag
+    // Auto-sync workbench view and open the pane when the agent emits a spatial tag
     useEffect(() => {
-        if (spatialContext?.view) setActiveView(spatialContext.view);
+        if (spatialContext) {
+            if (spatialContext.view) {
+                setActiveView(spatialContext.view);
+            }
+            setIsOpen(true);
+        }
     }, [spatialContext]);
     const [pinnedArtifacts, setPinnedArtifacts] = useState<ChatArtifact[]>([]);
     const [sessionState,    setSessionState]    = useState<SessionState>({
@@ -123,8 +128,18 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     const sessionIdRef = useRef<string>('');
 
     const open       = useCallback(() => setIsOpen(true),      []);
-    const close      = useCallback(() => setIsOpen(false),     []);
-    const toggleOpen = useCallback(() => setIsOpen(v => !v),   []);
+    const close      = useCallback(() => {
+        setIsOpen(false);
+        setSpatialContext(null);
+    }, []);
+    const toggleOpen = useCallback(() => {
+        setIsOpen(v => {
+            if (v) {
+                setTimeout(() => setSpatialContext(null), 0);
+            }
+            return !v;
+        });
+    }, []);
     const togglePin  = useCallback(() => setIsPinned(v => !v), []);
 
     const addPinnedArtifact = useCallback((a: ChatArtifact) => {

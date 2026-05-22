@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { WrenchIcon } from 'lucide-react';
 import {
     SpatialViewport,
@@ -71,9 +71,12 @@ function ZoomHud({ displayPct, onZoomIn, onZoomOut, onFit }: ZoomHudProps) {
     );
 }
 
+const MINI_W = 80;
+const MINI_H = 60;
+
 // ── Main component ────────────────────────────────────────────────────────────
 export function GlobalMachineViewer() {
-    const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact } = useWorkbench();
+    const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact, sessionState } = useWorkbench();
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
     const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact' | 'baseline-grid' | 'amperage' | 'polarity'>('machine');
@@ -82,8 +85,6 @@ export function GlobalMachineViewer() {
         if (activeArtifact) {
             setWorkbenchTab('artifact');
         } else {
-            // When an artifact is dismissed, go back to machine — but preserve the
-            // baseline-grid tab if the user was already there.
             setWorkbenchTab(prev => prev === 'artifact' ? 'machine' : prev);
         }
     }, [activeArtifact]);
@@ -99,35 +100,139 @@ export function GlobalMachineViewer() {
     const [isModifyMode, setIsModifyMode] = useState(false);
     const [exportCode,   setExportCode]   = useState<string | null>(null);
 
+    // ── Search ───────────────────────────────────────────────────────────────
+    const [searchQuery, setSearchQuery] = useState('');
+
     // ── Zoom / pan state ─────────────────────────────────────────────────────
     const [zoom, setZoom] = useState(1);
     const [pan,  setPan]  = useState({ x: 0, y: 0 });
     const viewportRef  = useRef<HTMLDivElement>(null);
     const contentRef   = useRef<HTMLDivElement>(null);
     const zoomViewRef  = useRef({ zoom: 1, panX: 0, panY: 0 });
-    // Stores the fit zoom so resetView can access it without stale closure
     const fitZoomRef   = useRef(1);
+    const isFirstLayout = useRef(true);
+    const lastFlownContextRef = useRef<SpatialContextTag | null>(null);
     const [fitZoom,    setFitZoom] = useState(1);
 
-    // Keep a ref to current zoom/pan for the non-reactive wheel handler
+    // Dims for mini-map
+    const [contentH,     setContentH]     = useState(0);
+    const [viewportDims, setViewportDims] = useState({ w: 0, h: 0 });
+
+    // View cross-fade
+    const [viewOpacity, setViewOpacity] = useState(1);
+
     zoomViewRef.current = { zoom, panX: pan.x, panY: pan.y };
 
+    // Stable refs for flyTo (avoids stale closures in the animation loop)
+    const registriesRef = useRef(registries);
+    registriesRef.current = registries;
+    const activeViewRef = useRef(activeView);
+    activeViewRef.current = activeView;
+
+    // ── Fly-to animation ─────────────────────────────────────────────────────
+    const flyAnimRef = useRef<number | null>(null);
+
+    const cancelFlyTo = useCallback(() => {
+        if (flyAnimRef.current !== null) {
+            cancelAnimationFrame(flyAnimRef.current);
+            flyAnimRef.current = null;
+        }
+    }, []);
+
+    const flyTo = useCallback((
+        keys: string[],
+        reg?: Record<string, SpatialControlPoint>
+    ) => {
+        cancelFlyTo();
+        const vp      = viewportRef.current;
+        const content = contentRef.current;
+        if (!vp || !content) return;
+
+        const activeReg = reg ?? registriesRef.current[activeViewRef.current];
+        const points    = keys.map(k => activeReg[k]).filter(Boolean);
+
+        const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+        if (!points.length) {
+            const startZ  = zoomViewRef.current.zoom;
+            const startPX = zoomViewRef.current.panX;
+            const startPY = zoomViewRef.current.panY;
+            const tgtZ    = fitZoomRef.current;
+            const t0      = performance.now();
+            const step = (now: number) => {
+                const t = Math.min((now - t0) / 400, 1);
+                const e = easeOut(t);
+                setZoom(startZ + (tgtZ - startZ) * e);
+                setPan({ x: startPX * (1 - e), y: startPY * (1 - e) });
+                if (t < 1) flyAnimRef.current = requestAnimationFrame(step);
+                else flyAnimRef.current = null;
+            };
+            flyAnimRef.current = requestAnimationFrame(step);
+            return;
+        }
+
+        const vpW  = vp.clientWidth;
+        const vpH  = vp.clientHeight;
+        const cntW = content.offsetWidth;
+        const cntH = content.offsetHeight;
+        if (cntH < 10) return;
+
+        const xs        = points.map(p => p.x);
+        const ys        = points.map(p => p.y);
+        const cx        = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const cy        = (Math.min(...ys) + Math.max(...ys)) / 2;
+        const xSpreadPx = (Math.max(...xs) - Math.min(...xs)) / 1000 * cntW;
+        const ySpreadPx = (Math.max(...ys) - Math.min(...ys)) / 1000 * cntH;
+        const spreadPx  = Math.max(xSpreadPx, ySpreadPx, 40);
+
+        const targetZoom = Math.min(Math.min(vpW / spreadPx, vpH / spreadPx) * 0.6, ZOOM_MAX);
+        const targetPanX = vpW / 2 - (cx / 1000 * cntW) * targetZoom;
+        const targetPanY = vpH / 2 - (cy / 1000 * cntH) * targetZoom;
+
+        const startZ  = zoomViewRef.current.zoom;
+        const startPX = zoomViewRef.current.panX;
+        const startPY = zoomViewRef.current.panY;
+        const t0      = performance.now();
+        const dur     = 500;
+
+        const step = (now: number) => {
+            const t = Math.min((now - t0) / dur, 1);
+            const e = easeOut(t);
+            setZoom(startZ  + (targetZoom - startZ)  * e);
+            setPan({
+                x: startPX + (targetPanX - startPX) * e,
+                y: startPY + (targetPanY - startPY) * e,
+            });
+            if (t < 1) flyAnimRef.current = requestAnimationFrame(step);
+            else flyAnimRef.current = null;
+        };
+        flyAnimRef.current = requestAnimationFrame(step);
+    }, [cancelFlyTo]);
+
     // ── Fit-to-view calculation ───────────────────────────────────────────────
-    // Called on mount and whenever the viewport or content resizes (e.g. image load,
-    // panel resize). Measures the content's natural layout height (transforms don't
-    // affect offsetHeight) and sets the zoom so the full product is visible.
     const computeFit = useCallback(() => {
         const vp      = viewportRef.current;
         const content = contentRef.current;
         if (!vp || !content) return;
-        const vpH     = vp.clientHeight;
-        const contentH = content.offsetHeight;
-        if (contentH < 10) return; // image not yet loaded
-        const fit = vpH / contentH;
+        const vpH  = vp.clientHeight;
+        const vpW  = vp.clientWidth;
+        const cntH = content.offsetHeight;
+        if (cntH < 10) return;
+        const fit = vpH / cntH;
+
+        const prevFitZoom = fitZoomRef.current;
         fitZoomRef.current = fit;
         setFitZoom(fit);
-        setZoom(fit);
-        setPan({ x: 0, y: 0 });
+
+        const isAtFit = Math.abs(zoomViewRef.current.zoom - prevFitZoom) < 0.02;
+        if (isFirstLayout.current || isAtFit) {
+            setZoom(fit);
+            setPan({ x: 0, y: 0 });
+            isFirstLayout.current = false;
+        }
+
+        setContentH(cntH);
+        setViewportDims({ w: vpW, h: vpH });
     }, []);
 
     useEffect(() => {
@@ -144,6 +249,7 @@ export function GlobalMachineViewer() {
         if (!el) return;
         const handler = (e: WheelEvent) => {
             e.preventDefault();
+            cancelFlyTo();
             const rect = el.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -155,7 +261,7 @@ export function GlobalMachineViewer() {
         };
         el.addEventListener('wheel', handler, { passive: false });
         return () => el.removeEventListener('wheel', handler);
-    }, []);
+    }, [cancelFlyTo]);
 
     // ── Pan drag ─────────────────────────────────────────────────────────────
     const panState = useRef<{ startX: number; startY: number; started: boolean; pointerId: number } | null>(null);
@@ -173,12 +279,13 @@ export function GlobalMachineViewer() {
         if (!s.started && Math.sqrt(dx * dx + dy * dy) > 5) {
             s.started = true;
             setIsPanning(true);
+            cancelFlyTo();
             (e.currentTarget as Element).setPointerCapture(s.pointerId);
         }
         if (s.started) {
             setPan(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
         }
-    }, []);
+    }, [cancelFlyTo]);
 
     const handlePanPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         if (panState.current?.started) {
@@ -208,32 +315,82 @@ export function GlobalMachineViewer() {
     }, []);
 
     const resetView = useCallback(() => {
+        cancelFlyTo();
         setZoom(fitZoomRef.current);
         setPan({ x: 0, y: 0 });
-    }, []);
+    }, [cancelFlyTo]);
 
-    // Reset zoom/pan when switching views
+    // View switch with 150 ms cross-fade
     const handleViewChange = useCallback((v: MachineView) => {
-        if (isModifyMode) return;
-        setActiveView(v);
-        setWorkbenchTab('machine');
-        setHighlightedTargets([]);
-        setDrawPath(false);
-        setExportCode(null);
-        resetView();
-    }, [isModifyMode, setActiveView, resetView]);
+        if (isModifyMode || v === activeView) return;
+        cancelFlyTo();
+        setViewOpacity(0);
+        setTimeout(() => {
+            setActiveView(v);
+            setWorkbenchTab('machine');
+            setHighlightedTargets([]);
+            setDrawPath(false);
+            setExportCode(null);
+            setSearchQuery('');
+            setViewOpacity(1);
+            requestAnimationFrame(() => {
+                setZoom(fitZoomRef.current);
+                setPan({ x: 0, y: 0 });
+            });
+        }, 150);
+    }, [isModifyMode, activeView, setActiveView, cancelFlyTo]);
 
     // ── Sync with agent spatial context ──────────────────────────────────────
     useEffect(() => {
-        if (!spatialContext) return;
+        if (!spatialContext) {
+            setHighlightedTargets([]);
+            setDrawPath(false);
+            resetView();
+            lastFlownContextRef.current = null;
+            return;
+        }
         setHighlightedTargets(spatialContext.highlights);
         setDrawPath(spatialContext.draw_path ?? false);
         setNavFlash(true);
         const t = setTimeout(() => setNavFlash(false), 900);
+
+        const vp = viewportRef.current;
+        const content = contentRef.current;
+        if (vp && content && content.offsetHeight >= 10) {
+            flyTo(spatialContext.highlights, registries[spatialContext.view]);
+            lastFlownContextRef.current = spatialContext;
+        } else {
+            lastFlownContextRef.current = null;
+        }
+
         return () => clearTimeout(t);
-    }, [spatialContext]);
+    }, [spatialContext, resetView, registries, flyTo]);
+
+    // Ensure we fly to the active spatial context once elements are laid out / have sizes
+    useEffect(() => {
+        if (spatialContext && lastFlownContextRef.current !== spatialContext && contentH >= 10 && viewportDims.w > 0) {
+            flyTo(spatialContext.highlights, registries[spatialContext.view]);
+            lastFlownContextRef.current = spatialContext;
+        }
+    }, [spatialContext, contentH, viewportDims, flyTo, registries]);
 
     const registry = registries[activeView];
+
+    // ── Search filter ─────────────────────────────────────────────────────────
+    const filteredKeys = useMemo(() => {
+        if (!searchQuery) return [];
+        const q = searchQuery.toLowerCase();
+        return Object.entries(registry)
+            .filter(([key, pt]) =>
+                key.toLowerCase().includes(q) ||
+                pt.title.toLowerCase().includes(q)
+            )
+            .map(([key]) => key);
+    }, [searchQuery, registry]);
+
+    // ── Polarity-aware path direction ─────────────────────────────────────────
+    const pathDirection: 'forward' | 'reverse' =
+        sessionState?.process?.toLowerCase().includes('dcen') ? 'reverse' : 'forward';
 
     const handleAnnotationClick = useCallback((point: SpatialControlPoint) => {
         const key = Object.keys(registry).find(k => registry[k].title === point.title);
@@ -255,6 +412,21 @@ export function GlobalMachineViewer() {
     const highlightedPoints = highlightedTargets
         .map(k => ({ key: k, point: registry[k] }))
         .filter(({ point }) => !!point);
+
+    // Sidebar: show search results when a query is active
+    const sidebarPoints = searchQuery
+        ? filteredKeys.map(k => ({ key: k, point: registry[k] })).filter(({ point }) => !!point)
+        : highlightedPoints;
+
+    // ── Mini-map ──────────────────────────────────────────────────────────────
+    const miniScale  = contentH > 0 && viewportDims.w > 0
+        ? Math.min(MINI_W / viewportDims.w, MINI_H / contentH)
+        : 0;
+    const miniRectX  = (-pan.x / zoom) * miniScale;
+    const miniRectY  = (-pan.y / zoom) * miniScale;
+    const miniRectW  = (viewportDims.w / zoom) * miniScale;
+    const miniRectH  = (viewportDims.h / zoom) * miniScale;
+    const showMiniMap = zoom > fitZoom * 1.15 && miniScale > 0 && workbenchTab === 'machine';
 
     return (
         <div
@@ -286,6 +458,20 @@ export function GlobalMachineViewer() {
                     )}
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* Component search bar — right of header, before Coords button */}
+                    <input
+                        type="text"
+                        placeholder="Search components…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Escape') setSearchQuery(''); }}
+                        className="text-[10px] font-mono rounded px-2 py-1 focus:outline-none w-36 transition-colors"
+                        style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: `1px solid ${searchQuery ? 'rgba(251,146,60,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                            color: searchQuery ? '#d4d8e4' : '#5c6478',
+                        }}
+                    />
                     <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: '#3d4760' }}>
                         Machine Viewer
                     </span>
@@ -353,7 +539,7 @@ export function GlobalMachineViewer() {
                     })}
                 </div>
 
-                {/* Artifact tab — appears when agent pushes an artifact to the workbench */}
+                {/* Artifact tab */}
                 {activeArtifact && (
                     <>
                         <div className="w-px h-4 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
@@ -383,7 +569,7 @@ export function GlobalMachineViewer() {
                     </>
                 )}
 
-                {/* Grid tab — always visible */}
+                {/* Grid tab */}
                 <div className="w-px h-4 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }} />
                 <button
                     onClick={() => setWorkbenchTab('baseline-grid')}
@@ -402,7 +588,7 @@ export function GlobalMachineViewer() {
                     Grid
                 </button>
 
-                {/* Power tab — always visible */}
+                {/* Power tab */}
                 <button
                     onClick={() => setWorkbenchTab('amperage')}
                     className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
@@ -420,7 +606,7 @@ export function GlobalMachineViewer() {
                     Power
                 </button>
 
-                {/* Polarity tab — always visible */}
+                {/* Polarity tab */}
                 <button
                     onClick={() => setWorkbenchTab('polarity')}
                     className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
@@ -439,7 +625,7 @@ export function GlobalMachineViewer() {
                 </button>
             </div>
 
-            {/* ── Artifact canvas (replaces machine view when active) ──────── */}
+            {/* ── Artifact canvas ──────────────────────────────────────────── */}
             {workbenchTab === 'artifact' && activeArtifact && (
                 <div className="flex-1 min-h-0 overflow-hidden">
                     <ArtifactRenderer
@@ -493,7 +679,7 @@ export function GlobalMachineViewer() {
                     onPointerUp={handlePanPointerUp}
                     onPointerLeave={handlePanPointerUp}
                 >
-                    {/* Scaled + panned content */}
+                    {/* Scaled + panned content — opacity fades on view switch */}
                     <div
                         ref={contentRef}
                         style={{
@@ -504,13 +690,18 @@ export function GlobalMachineViewer() {
                             transformOrigin: '0 0',
                             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
                             willChange: 'transform',
+                            opacity: viewOpacity,
+                            transition: 'opacity 150ms ease-in-out',
                         }}
                     >
                         <SpatialViewport
                             currentView={activeView}
                             registry={registry}
                             highlightedComponents={highlightedTargets}
+                            searchHighlights={filteredKeys.length > 0 ? filteredKeys : undefined}
                             drawPath={drawPath}
+                            drawPathAnimated={drawPath}
+                            pathDirection={pathDirection}
                             isModifyMode={isModifyMode}
                             isOverlay
                             onAnnotationClick={handleAnnotationClick}
@@ -518,6 +709,56 @@ export function GlobalMachineViewer() {
                             onDiscard={handleDiscard}
                         />
                     </div>
+
+                    {/* ── Mini-map — bottom-right, above ZoomHud ──────────── */}
+                    {showMiniMap && (
+                        <div
+                            style={{
+                                position: 'absolute',
+                                bottom: 56,
+                                right: 8,
+                                width: MINI_W,
+                                height: MINI_H,
+                                overflow: 'hidden',
+                                borderRadius: 4,
+                                border: '1px solid rgba(255,255,255,0.14)',
+                                backgroundColor: '#0a0b0e',
+                                zIndex: 25,
+                                pointerEvents: 'none',
+                                boxShadow: '0 2px 12px rgba(0,0,0,0.7)',
+                            }}
+                        >
+                            {/* Scaled-down full machine view */}
+                            <div style={{
+                                transform: `scale(${miniScale})`,
+                                transformOrigin: '0 0',
+                                width: viewportDims.w,
+                                height: contentH,
+                                pointerEvents: 'none',
+                            }}>
+                                <SpatialViewport
+                                    currentView={activeView}
+                                    registry={registry}
+                                    highlightedComponents={highlightedTargets}
+                                    drawPath={false}
+                                    isOverlay
+                                />
+                            </div>
+                            {/* Viewport window rectangle */}
+                            <div style={{
+                                position: 'absolute',
+                                left: miniRectX,
+                                top: miniRectY,
+                                width: Math.max(4, miniRectW),
+                                height: Math.max(4, miniRectH),
+                                border: '1.5px solid rgba(255,255,255,0.85)',
+                                borderRadius: 2,
+                                backgroundColor: 'rgba(255,255,255,0.06)',
+                                pointerEvents: 'none',
+                                boxShadow: '0 0 0 1px rgba(0,0,0,0.4)',
+                            }} />
+                        </div>
+                    )}
 
                     {/* Zoom HUD — bottom-left so the sidebar never covers it */}
                     <ZoomHud
@@ -527,7 +768,7 @@ export function GlobalMachineViewer() {
                         onFit={resetView}
                     />
 
-                    {/* ── Component detail sidebar ────────────────────────── */}
+                    {/* ── Component detail / search sidebar ───────────────── */}
                     {!isModifyMode && (
                         <div
                             className="absolute top-0 right-0 h-full z-30 flex flex-col animate-fade-in"
@@ -546,18 +787,28 @@ export function GlobalMachineViewer() {
                                 style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
                             >
                                 <div className="flex items-center gap-2">
-                                    {highlightedPoints.length > 0 && (
+                                    {sidebarPoints.length > 0 && (
                                         <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
                                     )}
                                     <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-orange-400">
-                                        {highlightedPoints.length > 1
-                                            ? `Circuit · ${highlightedPoints.length} parts`
-                                            : highlightedPoints.length === 1
-                                                ? 'Component'
-                                                : ''}
+                                        {searchQuery
+                                            ? `Search · ${sidebarPoints.length} match${sidebarPoints.length !== 1 ? 'es' : ''}`
+                                            : sidebarPoints.length > 1
+                                                ? `Circuit · ${sidebarPoints.length} parts`
+                                                : sidebarPoints.length === 1
+                                                    ? 'Component'
+                                                    : ''}
                                     </span>
                                 </div>
-                                {highlightedPoints.length > 0 && (
+                                {searchQuery ? (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-200 hover:bg-white/[.06] transition-all text-xs leading-none"
+                                        aria-label="Clear search"
+                                    >
+                                        ✕
+                                    </button>
+                                ) : sidebarPoints.length > 0 ? (
                                     <button
                                         onClick={() => setHighlightedTargets([])}
                                         className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-200 hover:bg-white/[.06] transition-all text-xs leading-none"
@@ -565,17 +816,17 @@ export function GlobalMachineViewer() {
                                     >
                                         ✕
                                     </button>
-                                )}
+                                ) : null}
                             </div>
 
                             {/* Component entries */}
                             <div className="flex-1 overflow-y-auto">
-                                {highlightedPoints.map(({ key, point }, i) => (
+                                {sidebarPoints.map(({ key, point }, i) => (
                                     <div
                                         key={key}
                                         className="px-4 py-4"
                                         style={{
-                                            borderBottom: i < highlightedPoints.length - 1
+                                            borderBottom: i < sidebarPoints.length - 1
                                                 ? '1px solid rgba(255,255,255,0.05)'
                                                 : undefined,
                                         }}
@@ -584,7 +835,7 @@ export function GlobalMachineViewer() {
                                             <p className="text-sm font-semibold leading-snug" style={{ color: '#e6e9ef' }}>
                                                 {point.title}
                                             </p>
-                                            {highlightedPoints.length > 1 && (
+                                            {!searchQuery && sidebarPoints.length > 1 && (
                                                 <button
                                                     onClick={() => setHighlightedTargets(prev => prev.filter(k => k !== key))}
                                                     className="flex-shrink-0 text-zinc-700 hover:text-zinc-400 text-[10px] mt-0.5 transition-colors"

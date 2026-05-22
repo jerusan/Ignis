@@ -192,14 +192,23 @@ export default function ChecklistRenderer({ title, code }: Props) {
               key={step.id}
               className={`rounded-lg border transition-all duration-300 ${
                 isDone
-                  ? 'border-green-500/20 bg-green-500/[0.025] opacity-75'
+                  ? 'border-green-500/20 bg-green-500/[0.025] opacity-75 hover:border-green-500/40 cursor-pointer'
                   : isActive
                   ? 'border-amber-500/50 bg-amber-500/[0.05]'
-                  : 'border-zinc-800/50 bg-zinc-900/20 opacity-40'
+                  : 'border-zinc-800/50 bg-zinc-900/20 opacity-40 hover:border-zinc-700/60 cursor-pointer'
               }`}
               style={isActive ? {
                 boxShadow: '0 0 16px rgba(245,158,11,0.08)',
               } : undefined}
+              onClick={() => {
+                if (step.spatial) {
+                  setSpatialContext({
+                    view: step.spatial.view,
+                    highlights: step.spatial.highlights,
+                    draw_path: step.spatial.draw_path,
+                  });
+                }
+              }}
             >
               <div className="flex items-start gap-3 px-3 py-3">
 
@@ -249,7 +258,10 @@ export default function ChecklistRenderer({ title, code }: Props) {
 
                   {isActive && (
                     <button
-                      onClick={() => handleComplete(step)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleComplete(step);
+                      }}
                       className="mt-3 w-full rounded border border-amber-500/40 bg-amber-500/10 py-2 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 transition-all duration-150 hover:bg-amber-500/20 hover:border-amber-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
                     >
                       Mark Complete
