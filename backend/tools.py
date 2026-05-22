@@ -333,9 +333,15 @@ _SECTION_CHUNKS: dict[str, list[str]] = {
 }
 
 
-def search_manual(query: str, section: str = "all") -> dict:
+def search_manual(query: str, section: str = "all", session_id: str | None = None) -> dict:
     chunks_dir = DATA_DIR / "chunks"
     chunk_names = _SECTION_CHUNKS.get(section) if section != "all" else None
+
+    # Load active process from session state
+    active_process = None
+    if session_id:
+        session = get_session(session_id)
+        active_process = session.get("process")
 
     results: list[dict] = []
     for md_file in sorted(chunks_dir.glob("*.md")):
@@ -346,7 +352,22 @@ def search_manual(query: str, section: str = "all") -> dict:
         # Simple relevance: count keyword matches
         query_lower = query.lower()
         hits = sum(content.lower().count(word) for word in query_lower.split() if len(word) > 3)
-        if hits > 0:
+
+        # Apply process-based boost to prioritize related content
+        boost = 0
+        if active_process:
+            proc_lower = active_process.lower()
+            if proc_lower == "mig" and name in ["mig_welding_technique", "wire_feed_setup", "wire_spool_install"]:
+                boost = 15
+            elif proc_lower == "flux_cored" and name in ["mig_welding_technique", "wire_feed_setup", "wire_spool_install"]:
+                boost = 15
+            elif proc_lower == "tig" and name in ["tig_torch_assembly", "tungsten_grinding"]:
+                boost = 15
+            elif proc_lower == "stick" and name in ["stick_welding_technique"]:
+                boost = 15
+
+        if hits > 0 or boost > 0:
+            hits += boost
             results.append({"chunk": name, "hits": hits, "content": content})
 
     if not results:
@@ -356,7 +377,19 @@ def search_manual(query: str, section: str = "all") -> dict:
             name = md_file.stem
             if chunk_names is not None and name not in chunk_names:
                 continue
-            results.append({"chunk": name, "hits": 0, "content": md_file.read_text()})
+            # Still apply boost here just in case all hits are 0 but we want process priority
+            boost = 0
+            if active_process:
+                proc_lower = active_process.lower()
+                if proc_lower == "mig" and name in ["mig_welding_technique", "wire_feed_setup", "wire_spool_install"]:
+                    boost = 15
+                elif proc_lower == "flux_cored" and name in ["mig_welding_technique", "wire_feed_setup", "wire_spool_install"]:
+                    boost = 15
+                elif proc_lower == "tig" and name in ["tig_torch_assembly", "tungsten_grinding"]:
+                    boost = 15
+                elif proc_lower == "stick" and name in ["stick_welding_technique"]:
+                    boost = 15
+            results.append({"chunk": name, "hits": boost, "content": md_file.read_text()})
 
     results.sort(key=lambda r: r["hits"], reverse=True)
     # Return top 2 chunks to avoid bloating context
@@ -392,5 +425,6 @@ def execute_tool(name: str, tool_input: dict, session_id: str) -> dict:
         return search_manual(
             query=tool_input["query"],
             section=tool_input.get("section", "all"),
+            session_id=session_id,
         )
     return {"error": f"Unknown tool: {name}"}

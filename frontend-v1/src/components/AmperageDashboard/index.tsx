@@ -242,236 +242,261 @@ export function AmperageDashboard() {
     const activeFaultData = FAULT_CODES.find(f => f.code === activeFault) ?? null;
 
     return (
-        <div className="flex flex-col h-full" style={{ backgroundColor: '#111215', color: '#d4d8e4' }}>
-
-            {/* ── POWER ENVELOPE ────────────────────────────────────────────── */}
-            <div className="flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-
-                {/* Section header */}
-                <div
-                    className="flex items-center justify-between px-5 py-2.5"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                >
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: '#3d4760' }}>
-                        Power Envelope
-                    </span>
-                </div>
-
-                {/* Process + voltage selectors */}
-                <div className="px-5 py-3 space-y-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[8px] font-mono uppercase tracking-widest w-14 flex-shrink-0" style={{ color: '#2e3852' }}>
-                            Process
+        <div className="flex flex-row h-full w-full" style={{ backgroundColor: '#111215', color: '#d4d8e4' }}>
+            {/* Left Column (Power Envelope & Fault chips) */}
+            <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+                {/* ── POWER ENVELOPE ────────────────────────────────────────────── */}
+                <div className="flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                    {/* Section header */}
+                    <div
+                        className="flex items-center justify-between px-5 py-2.5"
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    >
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: '#3d4760' }}>
+                            Power Envelope
                         </span>
-                        <div className="flex gap-1.5 flex-wrap">
-                            {PROCESS_PILLS.map(p => (
-                                <PillButton
-                                    key={p.specKey}
-                                    label={p.label}
-                                    active={selectedProcess === p.specKey}
-                                    onClick={() => setSelectedProcess(p.specKey)}
-                                />
-                            ))}
-                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[8px] font-mono uppercase tracking-widest w-14 flex-shrink-0" style={{ color: '#2e3852' }}>
-                            Voltage
-                        </span>
-                        <div className="flex gap-1.5">
-                            {(['120V', '240V'] as const).map(v => (
-                                <PillButton
-                                    key={v}
-                                    label={v}
-                                    active={selectedVoltage === v}
-                                    onClick={() => setSelectedVoltage(v)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
 
-                {/* Amperage slider */}
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    {activeEntry ? (
-                        <div className="space-y-1.5">
-                            <div className="flex items-center gap-3">
-                                <div className="relative flex-1">
-                                    <input
-                                        type="range"
-                                        min={activeEntry.range_min}
-                                        max={activeEntry.range_max}
-                                        step={5}
-                                        value={amperage}
-                                        onChange={e => setAmperage(Number(e.target.value))}
-                                        className="w-full"
-                                        style={{ accentColor: '#ff6b00' }}
-                                    />
-                                    {/* Pulse indicator above slider when continuous duty exceeded */}
-                                    {showPulse && (
-                                        <div className="absolute -top-4 left-0 right-0 flex justify-center pointer-events-none">
-                                            <span className="text-[8px] font-mono text-amber-400 animate-pulse">
-                                                ⚠ exceeds continuous rating
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex-shrink-0 flex items-baseline gap-1 min-w-[56px] justify-end">
-                                    <span
-                                        className="text-xl font-mono font-bold tabular-nums leading-none"
-                                        style={{ color: isExceeded ? '#ef4444' : '#ff6b00' }}
-                                    >
-                                        {amperage}
-                                    </span>
-                                    <span className="text-[10px] font-mono" style={{ color: '#5c6478' }}>A</span>
-                                </div>
-                            </div>
-                            <div className="flex justify-between px-0.5">
-                                <span className="text-[9px] font-mono tabular-nums" style={{ color: '#2e3852' }}>
-                                    {activeEntry.range_min} A
-                                </span>
-                                <span className="text-[9px] font-mono tabular-nums" style={{ color: '#2e3852' }}>
-                                    {activeEntry.range_max} A
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex justify-center py-2">
-                            <div className="flex gap-1">
-                                {[0, 150, 300].map(d => (
-                                    <span
-                                        key={d}
-                                        className="w-1.5 h-1.5 rounded-full animate-bounce"
-                                        style={{ backgroundColor: 'rgba(255,107,0,0.5)', animationDelay: `${d}ms` }}
+                    {/* Process + voltage selectors */}
+                    <div className="px-5 py-3 space-y-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[8px] font-mono uppercase tracking-widest w-14 flex-shrink-0" style={{ color: '#2e3852' }}>
+                                Process
+                            </span>
+                            <div className="flex gap-1.5 flex-wrap">
+                                {PROCESS_PILLS.map(p => (
+                                    <PillButton
+                                        key={p.specKey}
+                                        label={p.label}
+                                        active={selectedProcess === p.specKey}
+                                        onClick={() => setSelectedProcess(p.specKey)}
                                     />
                                 ))}
                             </div>
                         </div>
-                    )}
-                </div>
-
-                {/* Duty cycle bars */}
-                <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <div className="flex items-baseline justify-between mb-3">
-                        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: '#3d4760' }}>
-                            Duty Cycle at {amperage} A
-                        </span>
-                        {isExceeded && (
-                            <span className="flex items-center gap-1 text-[9px] font-mono text-red-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block" />
-                                SOA exceeded
+                        <div className="flex items-center gap-2">
+                            <span className="text-[8px] font-mono uppercase tracking-widest w-14 flex-shrink-0" style={{ color: '#2e3852' }}>
+                                Voltage
                             </span>
+                            <div className="flex gap-1.5">
+                                {(['120V', '240V'] as const).map(v => (
+                                    <PillButton
+                                        key={v}
+                                        label={v}
+                                        active={selectedVoltage === v}
+                                        onClick={() => setSelectedVoltage(v)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Amperage slider */}
+                    <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        {activeEntry ? (
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative flex-1">
+                                        <input
+                                            type="range"
+                                            min={activeEntry.range_min}
+                                            max={activeEntry.range_max}
+                                            step={5}
+                                            value={amperage}
+                                            onChange={e => setAmperage(Number(e.target.value))}
+                                            className="w-full"
+                                            style={{ accentColor: '#ff6b00' }}
+                                        />
+                                        {/* Pulse indicator above slider when continuous duty exceeded */}
+                                        {showPulse && (
+                                            <div className="absolute -top-4 left-0 right-0 flex justify-center pointer-events-none">
+                                                <span className="text-[8px] font-mono text-amber-400 animate-pulse">
+                                                    ⚠ exceeds continuous rating
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-shrink-0 flex items-baseline gap-1 min-w-[56px] justify-end">
+                                        <span
+                                            className="text-xl font-mono font-bold tabular-nums leading-none"
+                                            style={{ color: isExceeded ? '#ef4444' : '#ff6b00' }}
+                                        >
+                                            {amperage}
+                                        </span>
+                                        <span className="text-[10px] font-mono" style={{ color: '#5c6478' }}>A</span>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between px-0.5">
+                                    <span className="text-[9px] font-mono tabular-nums" style={{ color: '#2e3852' }}>
+                                        {activeEntry.range_min} A
+                                    </span>
+                                    <span className="text-[9px] font-mono tabular-nums" style={{ color: '#2e3852' }}>
+                                        {activeEntry.range_max} A
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex justify-center py-2">
+                                <div className="flex gap-1">
+                                    {[0, 150, 300].map(d => (
+                                        <span
+                                            key={d}
+                                            className="w-1.5 h-1.5 rounded-full animate-bounce"
+                                            style={{ backgroundColor: 'rgba(255,107,0,0.5)', animationDelay: `${d}ms` }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </div>
 
-                    {isExceeded ? (
-                        <div className="space-y-3">
-                            {tiers.slice(0, 2).map(tier => (
-                                <div key={tier.pct} className="space-y-1.5">
-                                    <div className="relative h-4 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                        <div className="h-full w-full rounded-sm bg-red-600/60 animate-pulse" />
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[9px] font-mono" style={{ color: '#3d4760' }}>
-                                            {tier.pct}% limit: {tier.maxAmp} A
-                                        </span>
-                                        <span className="text-[10px] font-mono font-bold text-red-400">OVER</span>
-                                    </div>
-                                </div>
-                            ))}
+                    {/* Duty cycle bars */}
+                    <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div className="flex items-baseline justify-between mb-3">
+                            <span className="text-[9px] font-mono font-bold uppercase tracking-[0.18em]" style={{ color: '#3d4760' }}>
+                                Duty Cycle at {amperage} A
+                            </span>
+                            {isExceeded && (
+                                <span className="flex items-center gap-1 text-[9px] font-mono text-red-400">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping inline-block" />
+                                    SOA exceeded
+                                </span>
+                            )}
                         </div>
-                    ) : displayBars.length > 0 ? (
-                        <div className="space-y-3">
-                            {displayBars.map((tier, i) => (
-                                <div key={tier.pct}>
-                                    <DutyCycleBar tier={tier} />
-                                    {i === 0 && displayBars.length > 1 && (
-                                        <div
-                                            className="flex items-center gap-2 mt-2 mb-1"
-                                            style={{ color: '#2e3852' }}
-                                        >
-                                            <span className="text-[8px] font-mono uppercase tracking-widest">
-                                                {tier.pct >= 60 ? 'sustained' : 'burst'}
-                                            </span>
-                                            <div className="flex-1 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }} />
-                                            <span className="text-[8px] font-mono uppercase tracking-widest">
-                                                {displayBars[1].pct < tier.pct ? 'burst' : 'sustained'}
-                                            </span>
+
+                        {isExceeded ? (
+                            <div className="space-y-3">
+                                {tiers.slice(0, 2).map(tier => (
+                                    <div key={tier.pct} className="space-y-1.5">
+                                        <div className="relative h-4 rounded-sm overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                                            <div className="h-full w-full rounded-sm bg-red-600/60 animate-pulse" />
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[9px] font-mono" style={{ color: '#3d4760' }}>
+                                                {tier.pct}% limit: {tier.maxAmp} A
+                                            </span>
+                                            <span className="text-[10px] font-mono font-bold text-red-400">OVER</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : displayBars.length > 0 ? (
+                            <div className="space-y-3">
+                                {displayBars.map((tier, i) => (
+                                    <div key={tier.pct}>
+                                        <DutyCycleBar tier={tier} />
+                                        {i === 0 && displayBars.length > 1 && (
+                                            <div
+                                                className="flex items-center gap-2 mt-2 mb-1"
+                                                style={{ color: '#2e3852' }}
+                                            >
+                                                <span className="text-[8px] font-mono uppercase tracking-widest">
+                                                    {tier.pct >= 60 ? 'sustained' : 'burst'}
+                                                </span>
+                                                <div className="flex-1 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }} />
+                                                <span className="text-[8px] font-mono uppercase tracking-widest">
+                                                    {displayBars[1].pct < tier.pct ? 'burst' : 'sustained'}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[10px] font-mono" style={{ color: '#2e3852' }}>
+                                Select process and voltage to see duty cycle.
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Input power info */}
+                    {inputPower && (
+                        <div
+                            className="px-5 py-3 flex items-center gap-4"
+                            style={{ backgroundColor: '#0f1012' }}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: '#2e3852' }}>
+                                    Input
+                                </span>
+                                <span className="text-[11px] font-mono font-semibold tabular-nums" style={{ color: '#9ba5bc' }}>
+                                    {voltageNum} V&thinsp;/&thinsp;{inputPower.input_current_rated}
+                                </span>
+                            </div>
+                            <div className="w-px h-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: '#2e3852' }}>
+                                    Breaker
+                                </span>
+                                <span className="text-[11px] font-mono font-semibold" style={{ color: '#9ba5bc' }}>
+                                    {inputPower.breaker_minimum}
+                                </span>
+                            </div>
+                            <div className="w-px h-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                            <span className="text-[9px] font-mono" style={{ color: '#2e3852' }}>
+                                {inputPower.plug_type}
+                            </span>
                         </div>
-                    ) : (
-                        <p className="text-[10px] font-mono" style={{ color: '#2e3852' }}>
-                            Select process and voltage to see duty cycle.
-                        </p>
                     )}
                 </div>
 
-                {/* Input power info */}
-                {inputPower && (
+                {/* ── FAULT CODE DECODER ────────────────────────────────────────── */}
+                <div className="flex-shrink-0 flex flex-col">
+                    {/* Section header */}
                     <div
-                        className="px-5 py-3 flex items-center gap-4"
-                        style={{ backgroundColor: '#0f1012' }}
+                        className="px-5 py-2.5"
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                     >
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: '#2e3852' }}>
-                                Input
-                            </span>
-                            <span className="text-[11px] font-mono font-semibold tabular-nums" style={{ color: '#9ba5bc' }}>
-                                {voltageNum} V&thinsp;/&thinsp;{inputPower.input_current_rated}
-                            </span>
-                        </div>
-                        <div className="w-px h-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[8px] font-mono uppercase tracking-widest" style={{ color: '#2e3852' }}>
-                                Breaker
-                            </span>
-                            <span className="text-[11px] font-mono font-semibold" style={{ color: '#9ba5bc' }}>
-                                {inputPower.breaker_minimum}
-                            </span>
-                        </div>
-                        <div className="w-px h-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                        <span className="text-[9px] font-mono" style={{ color: '#2e3852' }}>
-                            {inputPower.plug_type}
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: '#3d4760' }}>
+                            Fault Code Decoder
                         </span>
                     </div>
-                )}
+
+                    {/* Fault chips */}
+                    <div
+                        className="flex flex-wrap gap-2 px-5 py-3"
+                    >
+                        {FAULT_CODES.map(f => (
+                            <FaultChip
+                                key={f.code}
+                                code={f.code}
+                                active={activeFault === f.code}
+                                onClick={() => setActiveFault(prev => prev === f.code ? null : f.code)}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {/* ── FAULT CODE DECODER ────────────────────────────────────────── */}
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-
-                {/* Section header */}
+            {/* Right Column (Fault Diagnosis Sidebar) */}
+            <div
+                className="flex-shrink-0 flex flex-col border-l border-zinc-800/80 w-[350px] h-full"
+                style={{ backgroundColor: '#0b0c0f' }}
+            >
                 <div
-                    className="flex-shrink-0 px-5 py-2.5"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[#0f1012]"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
                 >
-                    <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]" style={{ color: '#3d4760' }}>
-                        Fault Code Decoder
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-orange-400">
+                            Fault Diagnosis
+                        </span>
+                    </div>
+                    {activeFault && (
+                        <button
+                            onClick={() => setActiveFault(null)}
+                            className="w-6 h-6 flex items-center justify-center rounded text-zinc-650 hover:text-zinc-200 hover:bg-white/[.06] transition-all text-xs leading-none"
+                            aria-label="Clear fault"
+                        >
+                            ✕
+                        </button>
+                    )}
                 </div>
 
-                {/* Fault chips */}
-                <div
-                    className="flex-shrink-0 flex flex-wrap gap-2 px-5 py-3"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                >
-                    {FAULT_CODES.map(f => (
-                        <FaultChip
-                            key={f.code}
-                            code={f.code}
-                            active={activeFault === f.code}
-                            onClick={() => setActiveFault(prev => prev === f.code ? null : f.code)}
-                        />
-                    ))}
-                </div>
-
-                {/* Fault detail card */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto bg-[#0a0b0d]">
                     {activeFaultData ? (
-                        <div className="px-5 py-4 space-y-3">
+                        <div className="px-5 py-4 space-y-4">
                             <div>
                                 <span
                                     className="text-[10px] font-mono font-bold tracking-wide"
@@ -479,10 +504,10 @@ export function AmperageDashboard() {
                                 >
                                     {activeFaultData.code}
                                 </span>
-                                <span className="text-[10px] font-mono ml-2" style={{ color: '#3d4760' }}>
+                                <span className="text-[10px] font-mono ml-2 text-zinc-650">
                                     —
                                 </span>
-                                <span className="text-sm font-semibold ml-2" style={{ color: '#d4d8e4' }}>
+                                <span className="text-sm font-semibold ml-2 text-zinc-100">
                                     {activeFaultData.name}
                                 </span>
                             </div>
@@ -491,10 +516,10 @@ export function AmperageDashboard() {
                                 className="rounded-lg px-3.5 py-3 space-y-1"
                                 style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}
                             >
-                                <p className="text-[8px] font-mono uppercase tracking-widest mb-1.5" style={{ color: '#2e3852' }}>
+                                <p className="text-[8px] font-mono uppercase tracking-widest mb-1.5 text-zinc-500">
                                     Cause
                                 </p>
-                                <p className="text-xs leading-relaxed" style={{ color: '#8894ad' }}>
+                                <p className="text-xs leading-relaxed text-zinc-300">
                                     {activeFaultData.cause}
                                 </p>
                             </div>
@@ -506,18 +531,18 @@ export function AmperageDashboard() {
                                     border: '1px solid rgba(255,107,0,0.15)',
                                 }}
                             >
-                                <p className="text-[8px] font-mono uppercase tracking-widest mb-1.5" style={{ color: 'rgba(255,107,0,0.5)' }}>
+                                <p className="text-[8px] font-mono uppercase tracking-widest mb-1.5 text-orange-400/80">
                                     Action
                                 </p>
-                                <p className="text-xs leading-relaxed" style={{ color: '#c4895a' }}>
+                                <p className="text-xs leading-relaxed text-orange-300/90">
                                     {activeFaultData.action}
                                 </p>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-full px-5">
-                            <p className="text-[10px] font-mono text-center" style={{ color: '#2e3852' }}>
-                                Tap a fault code chip to see the cause and corrective action
+                        <div className="flex items-center justify-center h-full p-6 text-center">
+                            <p className="text-[10px] font-mono text-zinc-500 leading-relaxed">
+                                Tap a fault code chip on the left to see the cause and corrective action.
                             </p>
                         </div>
                     )}

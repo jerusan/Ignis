@@ -119,41 +119,20 @@ export default function ChecklistRenderer({ title, code }: Props) {
   const progress       = total > 0 ? (completedCount / total) * 100 : 0;
   const activeStepId   = steps.find(s => !completed.has(s.id))?.id ?? null;
 
-  // ── Machine Ready summary ────────────────────────────────────────────────────
-  if (allDone) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-green-500/30 bg-green-500/10">
-          <CheckCircle2 className="h-7 w-7 text-green-500" />
-        </div>
-        <p className="text-sm font-bold tracking-tight" style={{ color: '#e6e9ef' }}>
-          Machine Ready
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#5c6478' }}>
-          {title} setup complete. All parameters confirmed.
-        </p>
-        <div className="mt-6 flex items-center gap-2">
-          <button
-            onClick={handleReset}
-            className="inline-flex items-center gap-1.5 rounded border border-zinc-700 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
-          >
-            <RotateCcw className="h-3 w-3" aria-hidden="true" />
-            Reset Setup
-          </button>
-          <button
-            onClick={() => setActiveChecklist(null)}
-            className="inline-flex items-center gap-1.5 rounded border border-zinc-700 px-3 py-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-600 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Active wizard ────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
+      <style>{`
+        @keyframes ignisFadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ignisScaleIn {
+          from { transform: scale(0.9); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
       {/* Header */}
       <div
         className="sticky top-0 z-10 flex items-center justify-between px-3 py-2"
@@ -163,12 +142,16 @@ export default function ChecklistRenderer({ title, code }: Props) {
         }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400 animate-pulse" />
+          {allDone ? (
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-green-500" />
+          ) : (
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-400 animate-pulse" />
+          )}
           <span
             className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] flex-shrink-0"
-            style={{ color: 'rgba(251,191,36,0.85)' }}
+            style={{ color: allDone ? 'rgba(34,197,94,0.85)' : 'rgba(251,191,36,0.85)' }}
           >
-            Setup
+            {allDone ? 'Ready' : 'Setup'}
           </span>
           <span
             className="text-xs font-medium truncate"
@@ -185,7 +168,7 @@ export default function ChecklistRenderer({ title, code }: Props) {
       {/* Progress bar */}
       <div className="h-px bg-zinc-800">
         <div
-          className="h-full bg-amber-500 transition-all duration-500 ease-out"
+          className={`h-full transition-all duration-500 ease-out ${allDone ? 'bg-green-500' : 'bg-amber-500'}`}
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -201,15 +184,16 @@ export default function ChecklistRenderer({ title, code }: Props) {
               key={step.id}
               className={`rounded-lg border transition-all duration-300 ${
                 isDone
-                  ? 'border-green-500/20 bg-green-500/[0.025] opacity-75 hover:border-green-500/40 cursor-pointer'
+                  ? 'border-green-500/20 bg-green-500/[0.025] opacity-60' + (allDone ? '' : ' hover:border-green-500/40 cursor-pointer')
                   : isActive
                   ? 'border-amber-500/50 bg-amber-500/[0.05]'
-                  : 'border-zinc-800/50 bg-zinc-900/20 opacity-40 hover:border-zinc-700/60 cursor-pointer'
+                  : 'border-zinc-800/50 bg-zinc-900/20 opacity-40' + (allDone ? '' : ' hover:border-zinc-700/60 cursor-pointer')
               }`}
               style={isActive ? {
                 boxShadow: '0 0 16px rgba(245,158,11,0.08)',
               } : undefined}
               onClick={() => {
+                if (allDone) return;
                 if (step.spatial) {
                   setSpatialContext({
                     view: step.spatial.view,
@@ -282,6 +266,47 @@ export default function ChecklistRenderer({ title, code }: Props) {
           );
         })}
       </div>
+
+      {/* Animated Success Banner appended at the bottom when allDone is true */}
+      {allDone && (
+        <div 
+          className="px-2 pb-4 pt-2"
+          style={{ animation: 'ignisFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        >
+          <div
+            className="flex flex-col items-center justify-center py-6 px-4 text-center rounded-lg border border-green-500/20 bg-green-500/[0.03]"
+            style={{ boxShadow: '0 0 16px rgba(34,197,94,0.05)' }}
+          >
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-green-500/30 bg-green-500/10">
+              <CheckCircle2 
+                className="h-5 w-5 text-green-500" 
+                style={{ animation: 'ignisScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s forwards', opacity: 0 }}
+              />
+            </div>
+            <p className="text-xs font-bold tracking-tight" style={{ color: '#e6e9ef' }}>
+              Machine Ready
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed" style={{ color: '#5c6478' }}>
+              {title} setup complete. All parameters confirmed.
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-1.5 rounded border border-zinc-800 px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
+              >
+                <RotateCcw className="h-2.5 w-2.5" aria-hidden="true" />
+                Reset Setup
+              </button>
+              <button
+                onClick={() => setActiveChecklist(null)}
+                className="inline-flex items-center gap-1.5 rounded border border-zinc-800 px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

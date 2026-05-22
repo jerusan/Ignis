@@ -144,44 +144,9 @@ function StatCell({
 
 function SettingsCard({ entry, labels }: { entry: BaselineEntry; labels: GridLabels }) {
   return (
-    <div
-      className="flex-shrink-0"
-      style={{
-        borderTop: '1px solid rgba(255,107,0,0.2)',
-        backgroundColor: 'rgba(255,107,0,0.035)',
-      }}
-    >
-      {/* Title bar */}
-      <div
-        className="flex items-center justify-between px-5 py-2.5"
-        style={{ borderBottom: '1px solid rgba(255,107,0,0.12)' }}
-      >
-        <div className="flex items-center gap-2.5">
-          <span
-            className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-            style={{
-              backgroundColor: '#ff6b00',
-              boxShadow: '0 0 6px rgba(255,107,0,0.9)',
-            }}
-          />
-          <span
-            className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]"
-            style={{ color: '#ff6b00' }}
-          >
-            Baseline Parameters
-          </span>
-        </div>
-        <span
-          className="text-[9px] font-mono truncate max-w-[200px]"
-          style={{ color: '#3d4760' }}
-        >
-          {labels.process[entry.process]} · {labels.material[entry.material]} ·{' '}
-          {entry.thickness_label} · {labels.wire[entry.wire]}
-        </span>
-      </div>
-
+    <div className="flex-1 flex flex-col bg-[#0a0b0d]">
       {/* Stats grid */}
-      <div className="px-5 py-3 grid grid-cols-2 gap-x-6 gap-y-3.5">
+      <div className="px-5 py-4 grid grid-cols-2 gap-x-6 gap-y-3.5">
         <StatCell label="Voltage"   value={`${entry.voltage_v} V`}            accent />
         <StatCell label="Wire Feed" value={`${entry.wfs_ipm} ipm`}            accent />
         <StatCell label="Amperage"  value={`${entry.amp_lo}–${entry.amp_hi} A`} />
@@ -210,15 +175,9 @@ function SettingsCard({ entry, labels }: { entry: BaselineEntry; labels: GridLab
 
 function EmptyCard() {
   return (
-    <div
-      className="flex-shrink-0 px-5 py-5 flex items-center justify-center"
-      style={{
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        backgroundColor: '#0f1012',
-      }}
-    >
-      <p className="text-[10px] font-mono text-center" style={{ color: '#2e3852' }}>
-        Select process → material → thickness → wire&nbsp;to&nbsp;see&nbsp;parameters
+    <div className="flex-1 flex items-center justify-center p-6 text-center bg-[#0a0b0d]">
+      <p className="text-[10px] font-mono text-zinc-500 leading-relaxed">
+        Select process → material → thickness → wire on the left to see baseline parameters.
       </p>
     </div>
   );
@@ -295,116 +254,143 @@ export function BaselineGrid() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
-      className="flex flex-col h-full"
+      className="flex flex-row h-full w-full"
       style={{ backgroundColor: '#111215', color: '#d4d8e4' }}
     >
-      {/* Header */}
-      <div
-        className="flex-shrink-0 px-5 py-3"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-      >
-        <p
-          className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]"
-          style={{ color: '#3d4760' }}
+      {/* Left Column (Selectors) */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {/* Header */}
+        <div
+          className="flex-shrink-0 px-5 py-3"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
-          Synergic Parameter Grid · Vulcan OmniPro 220
-        </p>
-      </div>
-
-      {/* Loading / error states */}
-      {loading && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex gap-1">
-            {[0, 150, 300].map(d => (
-              <span
-                key={d}
-                className="w-1.5 h-1.5 rounded-full animate-bounce"
-                style={{ backgroundColor: 'rgba(255,107,0,0.5)', animationDelay: `${d}ms` }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex-1 flex items-center justify-center px-5">
-          <p className="text-[10px] font-mono text-center" style={{ color: '#b91c1c' }}>
-            Failed to load grid data — {error}
+          <p
+            className="text-[9px] font-mono font-bold uppercase tracking-[0.2em]"
+            style={{ color: '#3d4760' }}
+          >
+            Synergic Parameter Grid · Vulcan OmniPro 220
           </p>
         </div>
-      )}
 
-      {/* Selector rows — scrollable */}
-      {!loading && !error && labels && (
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {/* Process */}
-          <SelectorRow label="Process">
-            {(Object.keys(labels.process) as WeldProcess[]).map(p => (
-              <PillButton
-                key={p}
-                label={labels.process[p]}
-                active={process === p}
-                onClick={() => setProcess(p)}
-              />
-            ))}
-          </SelectorRow>
-
-          {/* Material */}
-          <SelectorRow label="Material" dim={!process}>
-            {process ? (
-              availableMaterials.map(m => (
-                <PillButton
-                  key={m}
-                  label={labels.material[m]}
-                  active={material === m}
-                  onClick={() => setMaterial(m)}
+        {/* Loading / error states */}
+        {loading && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex gap-1">
+              {[0, 150, 300].map(d => (
+                <span
+                  key={d}
+                  className="w-1.5 h-1.5 rounded-full animate-bounce"
+                  style={{ backgroundColor: 'rgba(255,107,0,0.5)', animationDelay: `${d}ms` }}
                 />
-              ))
-            ) : (
-              <Hint>Select a process first</Hint>
-            )}
-          </SelectorRow>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {/* Thickness */}
-          <SelectorRow label="Thickness" dim={!material}>
-            {material ? (
-              availableThicknesses.map(e => (
-                <PillButton
-                  key={e.thickness_label}
-                  label={e.thickness_label}
-                  active={thickness === e.thickness_label}
-                  onClick={() => setThickness(e.thickness_label)}
-                />
-              ))
-            ) : (
-              <Hint>Select a material first</Hint>
-            )}
-          </SelectorRow>
+        {error && (
+          <div className="flex-1 flex items-center justify-center px-5">
+            <p className="text-[10px] font-mono text-center" style={{ color: '#b91c1c' }}>
+              Failed to load grid data — {error}
+            </p>
+          </div>
+        )}
 
-          {/* Wire */}
-          <SelectorRow label="Wire" dim={!thickness}>
-            {thickness ? (
-              availableWires.map(w => (
+        {/* Selector rows — scrollable */}
+        {!loading && !error && labels && (
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {/* Process */}
+            <SelectorRow label="Process">
+              {(Object.keys(labels.process) as WeldProcess[]).map(p => (
                 <PillButton
-                  key={w}
-                  label={labels.wire[w]}
-                  active={wire === w}
-                  onClick={() => setWire(w)}
+                  key={p}
+                  label={labels.process[p]}
+                  active={process === p}
+                  onClick={() => setProcess(p)}
                 />
-              ))
-            ) : (
-              <Hint>Select a thickness first</Hint>
-            )}
-          </SelectorRow>
+              ))}
+            </SelectorRow>
+
+            {/* Material */}
+            <SelectorRow label="Material" dim={!process}>
+              {process ? (
+                availableMaterials.map(m => (
+                  <PillButton
+                    key={m}
+                    label={labels.material[m]}
+                    active={material === m}
+                    onClick={() => setMaterial(m)}
+                  />
+                ))
+              ) : (
+                <Hint>Select a process first</Hint>
+              )}
+            </SelectorRow>
+
+            {/* Thickness */}
+            <SelectorRow label="Thickness" dim={!material}>
+              {material ? (
+                availableThicknesses.map(e => (
+                  <PillButton
+                    key={e.thickness_label}
+                    label={e.thickness_label}
+                    active={thickness === e.thickness_label}
+                    onClick={() => setThickness(e.thickness_label)}
+                  />
+                ))
+              ) : (
+                <Hint>Select a material first</Hint>
+              )}
+            </SelectorRow>
+
+            {/* Wire */}
+            <SelectorRow label="Wire" dim={!thickness}>
+              {thickness ? (
+                availableWires.map(w => (
+                  <PillButton
+                    key={w}
+                    label={labels.wire[w]}
+                    active={wire === w}
+                    onClick={() => setWire(w)}
+                  />
+                ))
+              ) : (
+                <Hint>Select a thickness first</Hint>
+              )}
+            </SelectorRow>
+          </div>
+        )}
+      </div>
+
+      {/* Right Column (Parameters Output Sidebar) */}
+      <div
+        className="flex-shrink-0 flex flex-col border-l border-zinc-800/80 w-[350px] h-full"
+        style={{ backgroundColor: '#0b0c0f' }}
+      >
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[#0f1012]"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse flex-shrink-0" />
+            <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-orange-400">
+              Baseline Parameters
+            </span>
+          </div>
+          {activeEntry && labels && (
+            <span className="text-[9px] font-mono truncate max-w-[180px] text-zinc-500">
+              {labels.process[activeEntry.process]} · {labels.material[activeEntry.material]}
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Settings output — pinned to bottom */}
-      {!loading && !error && (
-        activeEntry && labels
-          ? <SettingsCard entry={activeEntry} labels={labels} />
-          : <EmptyCard />
-      )}
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+          {!loading && !error && (
+            activeEntry && labels
+              ? <SettingsCard entry={activeEntry} labels={labels} />
+              : <EmptyCard />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

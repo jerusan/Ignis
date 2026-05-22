@@ -680,13 +680,12 @@ export function GlobalMachineViewer() {
             )}
 
             {/* ── Zoom / pan canvas ────────────────────────────────────────── */}
-            {workbenchTab === 'machine' && <div className="flex-1 min-h-0 flex flex-col">
-                {/* Viewport — shrinks to 60% when a checklist is active */}
+            {workbenchTab === 'machine' && <div className="flex-1 min-h-0 flex flex-row">
+                {/* Viewport (Product Viewer) */}
                 <div
                     ref={viewportRef}
-                    className="min-h-0 relative overflow-hidden"
+                    className="flex-1 min-h-0 w-0 relative overflow-hidden"
                     style={{
-                        flex: activeChecklist && !isModifyMode ? '3 0 0' : '1 1 0',
                         cursor: isPanning ? 'grabbing' : 'grab',
                         backgroundColor: '#121315',
                         backgroundImage: `
@@ -739,7 +738,7 @@ export function GlobalMachineViewer() {
                             style={{
                                 position: 'absolute',
                                 bottom: 56,
-                                right: 8,
+                                right: 16,
                                 width: MINI_W,
                                 height: MINI_H,
                                 overflow: 'hidden',
@@ -766,6 +765,7 @@ export function GlobalMachineViewer() {
                                     drawPath={false}
                                     isOverlay
                                     transparent
+                                    pathDirection={pathDirection}
                                 />
                             </div>
                             {/* Viewport window rectangle */}
@@ -791,23 +791,23 @@ export function GlobalMachineViewer() {
                         onZoomOut={zoomOut}
                         onFit={resetView}
                     />
+                </div>
 
-                    {/* ── Component detail / search sidebar ───────────────── */}
-                    {!isModifyMode && (
+                {/* ── Component Section (Right Sidebar) ────────────────────────── */}
+                <div
+                    className="flex-shrink-0 flex flex-col border-l border-zinc-800/80 w-[350px] h-full"
+                    style={{ backgroundColor: '#0b0c0f' }}
+                >
+                    {/* Component entries/details (only if search active or points highlighted) */}
+                    {!isModifyMode && (sidebarPoints.length > 0 || searchQuery) && (
                         <div
-                            className="absolute top-0 right-0 h-full z-30 flex flex-col animate-fade-in"
-                            style={{
-                                width: '30%',
-                                minWidth: 210,
-                                maxWidth: 300,
-                                backgroundColor: 'rgba(11,12,15,0.97)',
-                                backdropFilter: 'blur(14px)',
-                                borderLeft: '1px solid rgba(255,255,255,0.07)',
-                            }}
+                            className={`flex flex-col flex-1 min-h-0 ${
+                                activeChecklist ? 'border-b border-zinc-800/60' : ''
+                            }`}
                         >
                             {/* Sidebar header */}
                             <div
-                                className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+                                className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-[#0f1012]"
                                 style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
                             >
                                 <div className="flex items-center gap-2">
@@ -835,7 +835,7 @@ export function GlobalMachineViewer() {
                                 ) : sidebarPoints.length > 0 ? (
                                     <button
                                         onClick={() => setHighlightedTargets([])}
-                                        className="w-6 h-6 flex items-center justify-center rounded text-zinc-600 hover:text-zinc-200 hover:bg-white/[.06] transition-all text-xs leading-none"
+                                        className="w-6 h-6 flex items-center justify-center rounded text-zinc-650 hover:text-zinc-200 hover:bg-white/[.06] transition-all text-xs leading-none"
                                         aria-label="Clear selected components"
                                     >
                                         ✕
@@ -844,7 +844,7 @@ export function GlobalMachineViewer() {
                             </div>
 
                             {/* Component entries */}
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto bg-[#0a0b0d]">
                                 {sidebarPoints.map(({ key, point }, i) => (
                                     <div
                                         key={key}
@@ -869,7 +869,7 @@ export function GlobalMachineViewer() {
                                                 </button>
                                             )}
                                         </div>
-                                        <p className="text-xs leading-relaxed" style={{ color: '#5c6478' }}>
+                                        <p className="text-xs leading-relaxed font-sans text-zinc-400">
                                             {point.desc}
                                         </p>
                                     </div>
@@ -877,57 +877,65 @@ export function GlobalMachineViewer() {
                             </div>
                         </div>
                     )}
+
+                    {/* Default state if no checklist and no components are selected/searched */}
+                    {!isModifyMode && !activeChecklist && sidebarPoints.length === 0 && !searchQuery && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#0a0b0d]">
+                            <svg className="w-8 h-8 mb-2.5 opacity-20 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                            </svg>
+                            <p className="text-[11px] font-sans leading-relaxed text-zinc-500">
+                                Select a component pin on the machine layout or search components to view detailed wiring specifications and guidance.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Active Checklist */}
+                    {activeChecklist && !isModifyMode && (
+                        <div className="flex-1 min-h-0 flex flex-col bg-[#0f1012]">
+                            <div className="flex-1 min-h-0 overflow-y-auto">
+                                <ChecklistRenderer
+                                    id={activeChecklist.id}
+                                    title={activeChecklist.title}
+                                    code={activeChecklist.code}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Coordinate Edit Mode Hints */}
+                    {isModifyMode && (
+                        <div className="flex-1 flex flex-col justify-between p-4 bg-[#0a0b0d]">
+                            <div className="border border-orange-500/20 bg-orange-500/5 rounded-xl px-4 py-3">
+                                <p className="text-[10px] font-mono font-semibold text-orange-300 mb-1.5">Coordinate Edit Mode</p>
+                                <ul className="text-[9px] text-zinc-500 font-mono leading-relaxed space-y-0.5">
+                                    <li>· Drag any pin to reposition</li>
+                                    <li>· Drag <span className="text-orange-400">◆</span> handle to resize</li>
+                                    <li>· <span className="text-orange-400">Save ↵</span> to commit</li>
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Export Panel */}
+                    {exportCode && (
+                        <div className="flex-shrink-0 px-4 py-3 bg-[#0a0b0d]" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <MiniExportPanel code={exportCode} onDismiss={() => setExportCode(null)} />
+                        </div>
+                    )}
+
+                    {/* Bottom Hint Bar */}
+                    {!isModifyMode && !activeChecklist && (
+                        <div
+                            className="flex-shrink-0 px-4 py-3.5 bg-[#0f1012]"
+                            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+                        >
+                            <p className="text-[10px] font-mono text-center tracking-wide text-zinc-500">
+                                Tap a marker to inspect · drag to pan · scroll to zoom
+                            </p>
+                        </div>
+                    )}
                 </div>
-
-                {/* ── Export panel ──────────────────────────────────────── */}
-                {exportCode && (
-                    <div className="flex-shrink-0 px-5 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                        <MiniExportPanel code={exportCode} onDismiss={() => setExportCode(null)} />
-                    </div>
-                )}
-
-                {/* ── Modify mode hints ─────────────────────────────────── */}
-                {isModifyMode && (
-                    <div
-                        className="flex-shrink-0 mx-5 my-3 border border-orange-500/20 bg-orange-500/5 rounded-xl px-4 py-3"
-                    >
-                        <p className="text-[10px] font-mono font-semibold text-orange-300 mb-1.5">Coordinate Edit Mode</p>
-                        <ul className="text-[9px] text-zinc-500 font-mono leading-relaxed space-y-0.5">
-                            <li>· Drag any pin to reposition</li>
-                            <li>· Drag <span className="text-orange-400">◆</span> handle to resize</li>
-                            <li>· <span className="text-orange-400">Save ↵</span> to commit</li>
-                        </ul>
-                    </div>
-                )}
-
-                {/* ── Checklist controller — 40% of height when active ─── */}
-                {activeChecklist && !isModifyMode && (
-                    <div
-                        className="min-h-0 overflow-y-auto"
-                        style={{
-                            flex: '2 0 0',
-                            borderTop: '1px solid rgba(255,255,255,0.06)',
-                        }}
-                    >
-                        <ChecklistRenderer
-                            id={activeChecklist.id}
-                            title={activeChecklist.title}
-                            code={activeChecklist.code}
-                        />
-                    </div>
-                )}
-
-                {/* ── Hint bar — shown when no active checklist ─────────── */}
-                {!isModifyMode && !activeChecklist && (
-                    <div
-                        className="flex-shrink-0 px-5 py-3.5"
-                        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#0f1012' }}
-                    >
-                        <p className="text-[10px] font-mono text-center tracking-wide" style={{ color: '#2e3852' }}>
-                            Tap a marker to inspect · drag to pan · scroll to zoom
-                        </p>
-                    </div>
-                )}
             </div>}
         </div>
     );
