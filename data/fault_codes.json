@@ -1,0 +1,38 @@
+[
+  {
+    "code": "E01",
+    "name": "Input Power Fault",
+    "cause": "Input voltage too low, unstable, or outside rated range. Often caused by an undersized extension cord or a shared circuit with high-draw appliances.",
+    "action": "Verify input voltage is within range (120 V: 104–132 V; 240 V: 208–264 V). Use a dedicated 20 A (120 V) or 30 A (240 V) circuit. Limit extension cords to 25 ft and use 12 AWG or heavier."
+  },
+  {
+    "code": "E02",
+    "name": "Output Over-Voltage",
+    "cause": "Output voltage exceeded the safe limit. Can occur from open-circuit arc conditions, a worn contact tip, or an internal board fault.",
+    "action": "Release the trigger and wait 2 minutes. Inspect and replace the contact tip if worn or damaged. If the error recurs, contact technical support — do not attempt internal repairs."
+  },
+  {
+    "code": "E03",
+    "name": "Thermal Overload",
+    "cause": "Duty cycle exceeded; internal thermal protection activated to prevent component damage. Excessive ambient temperature or blocked vents can also trigger this.",
+    "action": "Leave power ON so fans continue cooling. Allow 15–20 minutes cool-down. Check that vents are unobstructed. Review duty cycle limits for the selected amperage in the Power tab."
+  },
+  {
+    "code": "E04",
+    "name": "Wire Feed Motor Fault",
+    "cause": "Drive motor stalled or overloaded. Possible causes: wire bird-nesting at the spool or gun inlet, excessive drive roll tension, a kinked or clogged gun liner, or a jammed contact tip.",
+    "action": "Power off. Clear any wire bird-nest at the drive rolls or gun inlet. Reduce drive roll tension to 2–3 (flux-cored) or 3–5 (solid wire). Straighten or replace a kinked liner. Replace a blocked contact tip."
+  },
+  {
+    "code": "E05",
+    "name": "Communication Error",
+    "cause": "Internal communication failure between the control board and the inverter board. Can be caused by vibration, a loose internal cable, or an inverter board fault.",
+    "action": "Power cycle the machine (off for 30 s, then on). If the error reappears immediately, do not attempt board-level repair — contact Vulcan technical support for warranty service."
+  },
+  {
+    "code": "E06",
+    "name": "Output Short Circuit",
+    "cause": "Output terminals shorted. Wire contacted the workpiece before the arc established, the trigger was held while wire was jammed, or the gun cable is internally shorted.",
+    "action": "Release the trigger. Clear any wire jam at the contact tip. Set stickout to 1/4–3/8 inch before triggering. Inspect the gun cable for kinks or internal shorts; replace if damaged."
+  }
+]

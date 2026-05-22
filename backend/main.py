@@ -61,6 +61,13 @@ def baseline_grid():
         return json.load(f)
 
 
+@app.get("/specs")
+def specs():
+    """Return full machine specs (duty cycles, polarity, wire/gas settings, input power)."""
+    with open(DATA_DIR / "specs.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
 @app.post("/chat")
 def chat(request: ChatRequest):
     messages = [{"role": m.role, "content": m.content} for m in request.messages]

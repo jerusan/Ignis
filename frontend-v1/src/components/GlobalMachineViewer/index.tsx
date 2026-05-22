@@ -10,6 +10,7 @@ import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay'
 import ChecklistRenderer from '../ChecklistRenderer';
 import ArtifactRenderer from '../ArtifactRenderer';
 import BaselineGrid from '../BaselineGrid';
+import AmperageDashboard from '../AmperageDashboard';
 
 const VIEW_LABELS: Record<MachineView, string> = {
     front:    'Front',
@@ -74,7 +75,7 @@ export function GlobalMachineViewer() {
     const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact } = useWorkbench();
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
-    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact' | 'baseline-grid'>('machine');
+    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact' | 'baseline-grid' | 'amperage'>('machine');
 
     useEffect(() => {
         if (activeArtifact) {
@@ -399,6 +400,24 @@ export function GlobalMachineViewer() {
                 >
                     Grid
                 </button>
+
+                {/* Power tab — always visible */}
+                <button
+                    onClick={() => setWorkbenchTab('amperage')}
+                    className="px-3 py-1.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.12em] transition-all duration-150 flex-shrink-0"
+                    style={workbenchTab === 'amperage' ? {
+                        color: '#ff6b00',
+                        background: 'linear-gradient(180deg, rgba(52,52,62,0.9) 0%, rgba(34,34,42,0.95) 100%)',
+                        boxShadow: '0 1px 0 rgba(255,255,255,0.04), inset 0 1px 2px rgba(0,0,0,0.6)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                    } : {
+                        color: '#5c6478',
+                        border: '1px solid transparent',
+                    }}
+                    title="Amperage & power envelope"
+                >
+                    Power
+                </button>
             </div>
 
             {/* ── Artifact canvas (replaces machine view when active) ──────── */}
@@ -420,6 +439,13 @@ export function GlobalMachineViewer() {
             {workbenchTab === 'baseline-grid' && (
                 <div className="flex-1 min-h-0 overflow-hidden">
                     <BaselineGrid />
+                </div>
+            )}
+
+            {/* ── Amperage / power envelope canvas ────────────────────────── */}
+            {workbenchTab === 'amperage' && (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <AmperageDashboard />
                 </div>
             )}
 

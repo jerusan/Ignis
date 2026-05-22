@@ -11,6 +11,7 @@ export default defineConfig({
       '/assets':        'http://localhost:8000',
       '/health':        'http://localhost:8000',
       '/baseline-grid': 'http://localhost:8000',
+      '/specs':         'http://localhost:8000',
     }
   }
 })
