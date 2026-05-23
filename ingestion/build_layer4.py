@@ -126,7 +126,7 @@ def build_pages_text(raw_pages: list[dict], source: str, page_range: tuple[int, 
 
 def extract_chunk(title: str, pages_text: str, client: anthropic.Anthropic) -> str:
     resp = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4000,
         messages=[{
             "role": "user",

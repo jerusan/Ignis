@@ -3,192 +3,968 @@
     "id": "spec_01",
     "category": "spec",
     "question": "What's the duty cycle for MIG welding at 200A on 240V?",
-    "expected_tool_calls": ["get_machine_spec"],
-    "ground_truth": "200A on 240V MIG has a 25% duty cycle — weld for 2.5 minutes, then rest for 7.5 minutes out of every 10. At 130A the duty cycle is 60%, and at 115A it's 100% (continuous).",
-    "key_numbers": ["25%", "200A", "240V"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "200A on 240V MIG has a 25% duty cycle \u2014 weld for 2.5 minutes, then rest for 7.5 minutes out of every 10. At 115A the duty cycle is 100% (continuous). The maximum MIG output on 240V is 220A.",
+    "key_numbers": [
+      "25%",
+      "200A",
+      "240V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
   },
   {
     "id": "spec_02",
     "category": "spec",
     "question": "What's the duty cycle for TIG welding at 175A on 240V?",
-    "expected_tool_calls": ["get_machine_spec"],
-    "ground_truth": "175A on 240V TIG has a 30% duty cycle — 3 minutes on, 7 minutes rest. At 125A it's 60%, and at 105A it's 100% continuous. The maximum TIG amperage on 240V is 175A.",
-    "key_numbers": ["30%", "175A", "240V"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "175A on 240V TIG has a 30% duty cycle \u2014 3 minutes on, 7 minutes rest. At 105A the duty cycle is 100% continuous. The maximum TIG amperage on 240V is 175A.",
+    "key_numbers": [
+      "30%",
+      "175A",
+      "240V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
   },
   {
     "id": "spec_03",
     "category": "spec",
     "question": "What drive roll tension should I set for flux-cored wire?",
-    "expected_tool_calls": ["get_machine_spec"],
-    "ground_truth": "Set drive roll tension to 2–3 for flux-cored wire. Flux-cored wire is softer than solid wire and needs less tension. For solid wire, use 3–5.",
-    "key_numbers": ["2–3", "3–5"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "wire_settings"
+      }
+    },
+    "ground_truth": "The tension should be 2\u20133 for flux-cored wire and 3\u20135 for solid wire. Too much tension on flux-cored wire will crush it and may cause feeding issues.",
+    "key_numbers": [
+      "2\u20133",
+      "3\u20135"
+    ],
+    "expected_image_ids": [
+      "interior_controls_p9",
+      "wire_setup_p15"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "WireSettings"
+    }
   },
   {
     "id": "spec_04",
     "category": "spec",
     "question": "What gas flow rate should I use for TIG welding, and what type of gas?",
-    "expected_tool_calls": ["get_machine_spec"],
-    "ground_truth": "TIG welding requires 100% Argon — no CO2, no mixed gas. Set flow rate to 10–25 SCFH. For most TIG work, 15–20 SCFH is the sweet spot.",
-    "key_numbers": ["10–25 SCFH", "100% Argon"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "gas_settings"
+      }
+    },
+    "ground_truth": "TIG welding requires 100% Argon \u2014 no CO2, no mixed gas. Set the flow rate to 10\u201325 SCFH.",
+    "key_numbers": [
+      "10",
+      "25",
+      "Argon"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
   },
   {
     "id": "spec_05",
     "category": "spec",
     "question": "What is the maximum CTWD for MIG welding?",
-    "expected_tool_calls": ["get_machine_spec"],
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "wire_settings"
+      }
+    },
     "ground_truth": "Maximum CTWD (Contact Tip to Work Distance) is 1/2 inch (0.5 inch). Keep the contact tip within half an inch of the work surface for stable arc and good current transfer.",
-    "key_numbers": ["1/2 inch", "0.5 inch"],
-    "requires_image": false
+    "key_numbers": [
+      "1/2",
+      "0.5"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "WireSettings"
+    }
   },
   {
     "id": "spec_06",
     "category": "spec",
     "question": "What is the amperage range for Stick welding on 120V?",
-    "expected_tool_calls": ["get_machine_spec"],
-    "ground_truth": "On 120V, Stick welding range is 10–80A. The duty cycle is 40% at 80A (maximum), 60% at 70A, and 100% at 60A. For heavier Stick work, use 240V which goes up to 175A.",
-    "key_numbers": ["10–80A", "40%", "80A", "120V"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "On 120V, Stick welding range is 10\u201380A. The duty cycle is 40% at 80A (maximum) and 100% at 60A. For heavier Stick work, use 240V which goes up to 175A.",
+    "key_numbers": [
+      "10",
+      "80A",
+      "40%",
+      "120V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
+  },
+  {
+    "id": "spec_07",
+    "category": "spec",
+    "question": "What is the duty cycle for MIG welding on 120V at 100A?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "On 120V, MIG welding at 100A has a 40% duty cycle \u2014 weld for 4 minutes, then rest for 6 minutes.",
+    "key_numbers": [
+      "40%",
+      "100A",
+      "120V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
+  },
+  {
+    "id": "spec_08",
+    "category": "spec",
+    "question": "What is the Stick welding amperage range and duty cycle on 240V?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "On 240V, the Stick welding range is 10\u2013175A. The duty cycle is 25% at 175A and 100% at 100A.",
+    "key_numbers": [
+      "10",
+      "175A",
+      "25%",
+      "240V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
+  },
+  {
+    "id": "spec_09",
+    "category": "spec",
+    "question": "What circuit breaker size do I need for welding on 240V?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "input_power"
+      }
+    },
+    "ground_truth": "For 240V welding, a minimum dedicated 30A circuit breaker is required. The rated input current is 25.5A.",
+    "key_numbers": [
+      "30A",
+      "25.5A",
+      "240V"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
   },
   {
     "id": "diag_01",
     "category": "diagnostic",
-    "question": "I'm getting porosity in my flux-cored welds — the weld looks full of tiny holes. What should I check?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Start with polarity: flux-cored requires DCEN (ground to positive socket, wire feed to negative socket). Wrong polarity is the #1 cause. Next: base metal must be clean — no rust, paint, oil. Do not use shielding gas with flux-cored wire. Check CTWD (max 1/2 inch) and use a 5–15° drag angle. Avoid welding in wind.",
+    "question": "I'm getting porosity in my flux-cored welds \u2014 the weld looks full of tiny holes. What should I check?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "porosity_wire"
+      }
+    },
+    "ground_truth": "Start with polarity: flux-cored requires DCEN (ground to positive socket, wire feed to negative socket). Wrong polarity is the #1 cause. Next: base metal must be clean \u2014 no rust, paint, oil. Do not use shielding gas with flux-cored wire. Check CTWD (max 1/2 inch) and use a 5\u201315\u00b0 drag angle. Avoid welding in wind.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["dcen_polarity_p13"]
+    "expected_image_ids": [
+      "dcen_polarity_p13"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_02",
     "category": "diagnostic",
     "question": "I'm getting porosity in my MIG welds with solid wire and shielding gas. What's causing it?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Check: (1) gas cylinder open with 20–30 SCFH flow; (2) nozzle clear of spatter; (3) polarity is DCEP (ground to negative, wire to positive); (4) base metal clean — no rust, oil, paint; (5) no drafts/wind blowing away shielding gas.",
-    "key_numbers": ["20–30 SCFH"],
-    "requires_image": true,
-    "expected_image_ids": ["dcep_polarity_p14"]
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "porosity_wire"
+      }
+    },
+    "ground_truth": "Check: (1) gas cylinder open with 20\u201330 SCFH flow; (2) nozzle clear of spatter; (3) polarity is DCEP (ground to negative, wire to positive); (4) base metal clean \u2014 no rust, oil, paint; (5) no drafts/wind blowing away shielding gas.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "dcep_polarity_p14"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_03",
     "category": "diagnostic",
-    "question": "My wire is bird's nesting — tangling up at the drive rolls inside the machine. How do I fix it?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Reduce drive roll tension. For flux-cored use 2–3, for solid wire 3–5. Excessive tension crushes wire and causes tangling. Also check: liner clear of kinks/debris, drive roll groove matches wire diameter, idler arm fully locked down, spool brake not too loose.",
-    "key_numbers": ["2–3", "3–5"],
-    "requires_image": true,
-    "expected_image_ids": ["interior_controls_p9"]
+    "question": "My wire is bird's nesting \u2014 tangling up at the drive rolls inside the machine. How do I fix it?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "birds_nest"
+      }
+    },
+    "ground_truth": "Reduce drive roll tension. Use 2\u20133 for flux-cored wire and 3\u20135 for solid wire. Excessive tension crushes the wire (especially flux-cored) and causes tangling. Also check: idler arm is fully locked down, drive roll groove matches wire size, liner is clear of debris, and spool brake is properly adjusted.",
+    "key_numbers": [
+      "2\u20133",
+      "3\u20135"
+    ],
+    "expected_image_ids": [
+      "interior_controls_p9",
+      "wire_setup_p15"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_04",
     "category": "diagnostic",
     "question": "Wire feeds fine but the arc won't ignite when I pull the trigger and touch the workpiece.",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Most likely cause: poor work clamp connection. Move the ground clamp to bare metal directly on the workpiece — not on paint, rust, or the welding table clamp. Also check polarity is correct and wire stickout is 1/4–1/2 inch (trim if longer).",
-    "key_numbers": ["1/4–1/2 inch"],
-    "requires_image": false
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "arc_wont_ignite"
+      }
+    },
+    "ground_truth": "Most likely cause: poor work clamp connection. Move the ground clamp to bare metal directly on the workpiece \u2014 not on paint, rust, or the welding table clamp. Also check polarity is correct and wire stickout is 1/4\u20131/2 inch (trim if longer).",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_05",
     "category": "diagnostic",
-    "question": "The machine won't power on at all — no display, no fan, nothing. What do I check?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Check the circuit breaker first — it may be tripped. For 240V welding: minimum 30A dedicated circuit. For 120V: 20A dedicated circuit. Test the outlet with another device. Check power cord for damage. Verify power switch is fully in the ON position.",
-    "key_numbers": ["30A", "20A"],
-    "requires_image": false
+    "question": "The machine won't power on at all \u2014 no display, no fan, nothing. What do I check?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "machine_wont_start"
+      }
+    },
+    "ground_truth": "Check the circuit breaker first \u2014 it may be tripped. For 240V welding: minimum 30A dedicated circuit. For 120V: 20A dedicated circuit. Test the outlet with another device. Check power cord for damage. Verify power switch is fully in the ON position.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_06",
     "category": "diagnostic",
     "question": "I keep burning holes through the thin sheet metal I'm trying to weld. How do I stop the burn-through?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Increase travel speed — keep moving, no pauses or wide weave. Reduce wire speed (amperage) 15–20% and drop voltage one step. Use thinnest wire available (0.023\" for very thin material). Ensure tight fit-up with no gaps. Tack weld frequently to distribute heat.",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "burn_through"
+      }
+    },
+    "ground_truth": "Increase travel speed \u2014 keep moving, no pauses or wide weave. Reduce wire speed (amperage) 15\u201320% and drop voltage one step. Use thinnest wire available (0.023\" for very thin material). Ensure tight fit-up with no gaps. Tack weld frequently to distribute heat.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["wire_weld_diagnosis_p35"]
+    "expected_image_ids": [
+      "wire_weld_diagnosis_p35"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_07",
     "category": "diagnostic",
     "question": "I'm getting massive spatter everywhere when welding with flux-cored wire. What's wrong?",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Wrong polarity is the #1 cause. Flux-cored requires DCEN: ground clamp to POSITIVE (+) socket, wire feed to NEGATIVE (−) socket. If polarity is correct, increase voltage until the arc sounds smooth and steady (like frying bacon). Some spatter is normal with flux-cored.",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "excessive_spatter"
+      }
+    },
+    "ground_truth": "Wrong polarity is the #1 cause. Flux-cored requires DCEN: ground clamp to POSITIVE (+) socket, wire feed to NEGATIVE (\u2212) socket. If polarity is correct, increase voltage until the arc sounds smooth and steady (like frying bacon). Some spatter is normal with flux-cored.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["dcen_polarity_p13"]
+    "expected_image_ids": [
+      "dcen_polarity_p13"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "diag_08",
     "category": "diagnostic",
-    "question": "My welds have poor penetration — the bead just sits on top of the metal like a rope, not fused in.",
-    "expected_tool_calls": ["diagnose_defect"],
-    "ground_truth": "Check polarity (DCEP for MIG: ground to −, wire to +). Slow down travel speed. Increase wire speed (amperage). Use 5–15° drag angle and ensure CTWD is 1/4–1/2 inch. The bead should wet out visibly to the sides of the joint.",
+    "question": "My welds have poor penetration \u2014 the bead just sits on top of the metal like a rope, not fused in.",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "inadequate_penetration"
+      }
+    },
+    "ground_truth": "Check polarity (DCEP for MIG: ground to \u2212, wire to +). Slow down travel speed. Increase wire speed (amperage). Use 5\u201315\u00b0 drag angle and ensure CTWD is 1/4\u20131/2 inch. The bead should wet out visibly to the sides of the joint.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["wire_penetration_p36", "push_drag_angle_p22"]
+    "expected_image_ids": [
+      "wire_penetration_p36",
+      "push_drag_angle_p22"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "diag_09",
+    "category": "diagnostic",
+    "question": "My drive motor won't spin at all when I press the MIG trigger. What should I check?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "wire_wont_feed"
+      }
+    },
+    "ground_truth": "Check if the MIG gun Eurofitting is plugged into the front panel socket. If it is plugged in, press the trigger to see if you hear a relay click. If no sound, the trigger switch may be faulty. If the trigger switch is fine, the motor may need service.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "front_panel_p8"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "diag_10",
+    "category": "diagnostic",
+    "question": "I am getting porosity in my stick welds. The rod package has been open on my workbench for a few months. Could that be it?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "porosity_stick"
+      }
+    },
+    "ground_truth": "Yes, the electrodes have likely absorbed moisture from the air. Discard them or re-dry low-hydrogen electrodes in an oven at 250\u2013300\u00b0F for 1\u20132 hours. Store electrodes in a sealed container.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "diag_11",
+    "category": "diagnostic",
+    "question": "Can you show me the page comparing stick weld beads? What does a weld with too low current look like?",
+    "expected_tool_calls": [
+      "get_visual"
+    ],
+    "ground_truth": "The stick weld comparison page shows that a weld with current too low is ropy, uneven, has slag that is hard to remove, and has overlap.",
+    "key_numbers": [
+      "ropy",
+      "overlap"
+    ],
+    "expected_image_ids": [
+      "stick_weld_diagnosis_p38"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
+  },
+  {
+    "id": "diag_12",
+    "category": "diagnostic",
+    "question": "The wire feed motor inside my welder spins when I pull the trigger, but the wire doesn't move. What do I check?",
+    "expected_tool_calls": [
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "diagnose_defect": {
+        "tree": "wire_wont_feed"
+      }
+    },
+    "ground_truth": "Check if the wire is slipping at the drive rolls. Ensure the idler arm is locked down and the tension knob is set correctly (3-5 for solid wire, 2-3 for flux-cored). Check that the drive roll groove matches the wire diameter.",
+    "key_numbers": [
+      "2",
+      "3",
+      "5"
+    ],
+    "expected_image_ids": [
+      "interior_controls_p9"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
   },
   {
     "id": "setup_01",
     "category": "polarity_setup",
     "question": "How do I set up the cables for TIG welding? Which socket does each cable go in?",
-    "expected_tool_calls": ["get_visual", "get_machine_spec"],
-    "ground_truth": "TIG uses DCEN. Ground clamp goes in the POSITIVE (+) socket. TIG torch goes in the NEGATIVE (−) socket. Foot pedal connects to the interior control socket inside the storage compartment. Shielding gas (100% Argon) connects to the rear gas inlet.",
+    "expected_tool_calls": [
+      "get_visual",
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "TIG"
+      }
+    },
+    "ground_truth": "TIG uses DCEN. Ground clamp goes in the POSITIVE (+) socket. TIG torch goes in the NEGATIVE (\u2212) socket. Foot pedal connects to the interior control socket inside the storage compartment. Shielding gas (100% Argon) connects to the rear gas inlet.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["tig_setup_p24"]
+    "expected_image_ids": [
+      "tig_setup_p24"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
   },
   {
     "id": "setup_02",
     "category": "polarity_setup",
     "question": "What polarity setup do I need for flux-cored welding? Which socket does the ground clamp go in?",
-    "expected_tool_calls": ["get_visual", "get_machine_spec"],
-    "ground_truth": "Flux-cored welding uses DCEN. Ground clamp goes in the POSITIVE (+) socket. Wire feed power cable goes in the NEGATIVE (−) socket. This is the opposite of MIG. Do NOT use shielding gas with flux-cored wire.",
+    "expected_tool_calls": [
+      "get_visual",
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "flux_cored"
+      }
+    },
+    "ground_truth": "Flux-cored welding uses DCEN. Ground clamp goes in the POSITIVE (+) socket. Wire feed power cable goes in the NEGATIVE (\u2212) socket. This is the opposite of MIG. Do NOT use shielding gas with flux-cored wire.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["dcen_polarity_p13"]
+    "expected_image_ids": [
+      "dcen_polarity_p13"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
   },
   {
     "id": "setup_03",
     "category": "polarity_setup",
     "question": "How do I set up for MIG welding with solid wire and shielding gas? Where do the cables go?",
-    "expected_tool_calls": ["get_visual", "get_machine_spec"],
-    "ground_truth": "MIG solid wire uses DCEP. Ground clamp goes in the NEGATIVE (−) socket. Wire feed power cable (MIG gun) goes in the POSITIVE (+) socket. Use C25 shielding gas (75% Argon/25% CO2) at 20–30 SCFH.",
-    "key_numbers": ["20–30 SCFH"],
-    "requires_image": true,
-    "expected_image_ids": ["dcep_polarity_p14"]
+    "expected_tool_calls": [
+      "get_visual",
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "MIG"
+      }
+    },
+    "ground_truth": "MIG solid wire uses DCEP. Ground clamp goes in the NEGATIVE (\u2212) socket. Wire feed power cable (MIG gun) goes in the POSITIVE (+) socket. Use C25 shielding gas (75% Argon/25% CO2) at 20\u201330 SCFH.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "dcep_polarity_p14"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
   },
   {
     "id": "setup_04",
     "category": "polarity_setup",
     "question": "How do I set up for Stick welding? Which socket gets the electrode holder?",
-    "expected_tool_calls": ["get_visual", "get_machine_spec"],
-    "ground_truth": "Stick welding uses DCEP for most electrodes. Electrode holder (stinger) goes in the POSITIVE (+) socket. Ground clamp goes in the NEGATIVE (−) socket. No gas required.",
+    "expected_tool_calls": [
+      "get_visual",
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "Stick"
+      }
+    },
+    "ground_truth": "Stick welding uses DCEP for most electrodes. Electrode holder (stinger) goes in the POSITIVE (+) socket. Ground clamp goes in the NEGATIVE (\u2212) socket. No gas required.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["stick_setup_p27"]
+    "expected_image_ids": [
+      "stick_setup_p27"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
   },
   {
     "id": "setup_05",
     "category": "polarity_setup",
-    "question": "Which socket does the TIG torch connect to — positive or negative?",
-    "expected_tool_calls": ["get_machine_spec", "get_visual"],
-    "ground_truth": "The TIG torch connects to the NEGATIVE (−) socket. TIG uses DCEN (Direct Current Electrode Negative), so the torch/electrode is negative and the ground clamp is in the positive socket.",
+    "question": "Which socket does the TIG torch connect to \u2014 positive or negative?",
+    "expected_tool_calls": [
+      "get_machine_spec",
+      "get_visual"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "TIG"
+      }
+    },
+    "ground_truth": "The TIG torch connects to the NEGATIVE (\u2212) socket. TIG uses DCEN (Direct Current Electrode Negative), so the torch/electrode is negative and the ground clamp is in the positive socket.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["tig_setup_p24"]
+    "expected_image_ids": [
+      "tig_setup_p24"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
   },
   {
     "id": "setup_06",
     "category": "polarity_setup",
     "question": "Can you show me the front panel controls? What are all the knobs and buttons for?",
-    "expected_tool_calls": ["get_visual"],
-    "ground_truth": "The front panel has: Home button (returns to main screen), Back button, Left knob (secondary parameter), Main/center knob (primary setting — turn to adjust, press to enter menus), Right knob (fine adjust), LCD color display, MIG gun Eurofitting socket, Negative (−) socket, Positive (+) socket, Spool gun gas outlet, storage compartment door (houses foot pedal socket), and power switch.",
+    "expected_tool_calls": [
+      "get_visual"
+    ],
+    "ground_truth": "The front panel has: Home button (returns to main screen), Back button, Left knob (secondary parameter), Main/center knob (primary setting \u2014 turn to adjust, press to enter menus), Right knob (fine adjust), LCD color display, MIG gun Eurofitting socket, Negative (\u2212) socket, Positive (+) socket, Spool gun gas outlet, storage compartment door (houses foot pedal socket), and power switch.",
     "key_numbers": [],
-    "requires_image": true,
-    "expected_image_ids": ["front_panel_p8"]
+    "expected_image_ids": [
+      "front_panel_p8"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "fc_01",
+    "category": "fault_code",
+    "question": "My machine is showing 'Duty Cycle Exceeded' on the LCD. What does this mean and what should I do?",
+    "expected_tool_calls": [
+      "get_fault_code"
+    ],
+    "expected_tool_inputs": {
+      "get_fault_code": {
+        "code": "Duty Cycle Exceeded"
+      }
+    },
+    "ground_truth": "Thermal protection has activated because the duty cycle was exceeded \u2014 the machine shut down to prevent component damage. Leave the Power Switch ON so the internal fan keeps cooling. The welder will automatically return to service once it cools down. Reduce your welding duration or frequency going forward.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "fc_02",
+    "category": "fault_code",
+    "question": "The display says 'Low Voltage Input'. What causes this and how do I fix it?",
+    "expected_tool_calls": [
+      "get_fault_code"
+    ],
+    "expected_tool_inputs": {
+      "get_fault_code": {
+        "code": "Low Voltage Input"
+      }
+    },
+    "ground_truth": "Low Voltage Input means the input voltage has dropped below the specified limit, often caused by a shared circuit, insufficient amperage, or undersized wiring. Ensure the circuit supplies the required voltage and amperage per the Specifications table. Do not use an extension cord \u2014 use only the supplied power cord.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "fc_03",
+    "category": "fault_code",
+    "question": "My welder is showing 'High Voltage Input' on the screen and won't weld. How do I fix it?",
+    "expected_tool_calls": [
+      "get_fault_code"
+    ],
+    "expected_tool_inputs": {
+      "get_fault_code": {
+        "code": "High Voltage Input"
+      }
+    },
+    "ground_truth": "High Voltage Input means the input voltage is higher than the specified limit. Check your power source and ensure it is within range. The machine will resume normal operation once the issue is remedied. There is no circuit breaker to reset.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "tech_01",
+    "category": "technique",
+    "question": "What angle should I use when grinding tungsten? And should it be balled or pointed?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "ground_truth": "Grind the tungsten longitudinally (parallel to the length of the electrode) against the grinding wheel to form a blunt point. The conical portion of the ideal tip should be 2-1/2 times as long as the electrode diameter.",
+    "key_numbers": [
+      "2-1/2",
+      "diameter",
+      "point"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
+  },
+  {
+    "id": "tech_02",
+    "category": "technique",
+    "question": "What's the difference between a push and a drag gun angle in MIG welding?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "ground_truth": "For MIG solid wire with gas, use a push angle where the gun is tilted between straight on and 15 degrees away from the weld direction. For flux-cored wire without gas, use a drag angle where the gun is tilted between straight on and 15 degrees in the weld direction.",
+    "key_numbers": [
+      "15",
+      "push",
+      "drag"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
+  },
+  {
+    "id": "tech_03",
+    "category": "technique",
+    "question": "How do I install a new wire spool in the welder?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "ground_truth": "Open the side door. Remove the spool knob/spring. Install the spool so the wire feeds off the bottom towards the feed rolls. Reinstall spring/knob. Thread wire through the guide liner into the drive rolls. Lock idler arm and feed wire.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "tech_04",
+    "category": "technique",
+    "question": "What maintenance should I perform on the welder after using it?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "ground_truth": "After welding, lift the electrode and set the holder down on a nonconductive surface, then turn the Power Switch OFF. Allow the welder to cool down, unplug the power cord, remove the ground clamp, disconnect the cables, clean the welder, and store it indoors.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "tech_05",
+    "category": "technique",
+    "question": "How do I adjust the run-in WFS and inductance settings?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "ground_truth": "Press the Main Control Knob to enter Optional Settings, turn the knob to the desired setting, and press it to adjust. Run-In WFS adjusts wire speed before contacting the workpiece (representing a % of WFS), while Inductance adjusts arc length (increase for fluid/flat bead, decrease for colder puddle).",
+    "key_numbers": [
+      "inductance",
+      "run-in",
+      "%"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
+  },
+  {
+    "id": "syn_01",
+    "category": "synergic",
+    "question": "What are the recommended voltage and wire speed settings for MIG welding on 14 ga mild steel using 0.030\" solid wire?",
+    "expected_tool_calls": [
+      "get_synergic_settings"
+    ],
+    "expected_tool_inputs": {
+      "get_synergic_settings": {
+        "process": "MIG",
+        "material": "mild_steel"
+      }
+    },
+    "ground_truth": "The OmniPro 220 has a synergic mode. Select MIG process, 0.030\" wire diameter, and material thickness (around 24 ga to 1/8\" range for 14 ga). The machine will suggest baseline voltage and wire feed speed. Fine-tune while welding. Refer to the Settings Chart on the inside of the welder door for gas type.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "front_panel_p8",
+      "settings_screen_p20"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "syn_02",
+    "category": "synergic",
+    "question": "I'm welding 16 ga stainless steel with 0.030\" wire. What voltage and WFS do I need?",
+    "expected_tool_calls": [
+      "get_synergic_settings"
+    ],
+    "expected_tool_inputs": {
+      "get_synergic_settings": {
+        "process": "MIG",
+        "material": "stainless"
+      }
+    },
+    "ground_truth": "Use synergic MIG mode. Select 0.030\" wire and appropriate stainless thickness. Use Tri-Mix gas. The machine provides suggested voltage and WFS. Adjust as needed based on weld appearance.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "settings_screen_p20"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "syn_03",
+    "category": "synergic",
+    "question": "What are the settings for MIG welding 1/8\" aluminum with 0.030\" wire?",
+    "expected_tool_calls": [
+      "get_synergic_settings"
+    ],
+    "expected_tool_inputs": {
+      "get_synergic_settings": {
+        "process": "MIG",
+        "material": "aluminum"
+      }
+    },
+    "ground_truth": "Aluminum requires an optional spool gun. Use 100% Argon gas. Select synergic MIG mode with 0.030\" aluminum wire and material thickness. The machine suggests baseline settings that should be fine-tuned.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "syn_04",
+    "category": "synergic",
+    "question": "What voltage and wire speed should I use for flux-cored welding on 16 ga mild steel with 0.030\" wire?",
+    "expected_tool_calls": [
+      "get_synergic_settings"
+    ],
+    "expected_tool_inputs": {
+      "get_synergic_settings": {
+        "process": "flux_cored",
+        "material": "mild_steel"
+      }
+    },
+    "ground_truth": "Use Flux-Cored (gasless) mode. Select 0.030\" flux-cored wire and material thickness. The welder provides synergic recommendations for voltage and wire feed speed. Use DCEN polarity.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "syn_05",
+    "category": "synergic",
+    "question": "If I'm MIG welding 3/16\" mild steel with 0.035\" wire, what should my voltage and WFS be?",
+    "expected_tool_calls": [
+      "get_synergic_settings"
+    ],
+    "expected_tool_inputs": {
+      "get_synergic_settings": {
+        "process": "MIG",
+        "material": "mild_steel"
+      }
+    },
+    "ground_truth": "In synergic MIG mode, select 0.035\" solid wire and material thickness near 3/16\". The machine suggests starting voltage and WFS. Use C25 gas and DCEP polarity. Fine-tune while testing on scrap.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "settings_screen_p20"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "comp_01",
+    "category": "complex",
+    "question": "What process should I use for welding 16ga galvanized steel?",
+    "expected_tool_calls": [
+      "get_visual",
+      "search_manual"
+    ],
+    "ground_truth": "According to the selection chart, Flux-Cored (FCAW) is the most suitable process for dirty, rusty, or galvanized metal. Safety warnings in the manual state that welding galvanized steel produces toxic zinc fumes, so proper ventilation, exhaust, or a respirator must be used.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "selection_chart"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "comp_02",
+    "category": "complex",
+    "question": "I'm setting up to weld. Can you tell me what settings to use?",
+    "expected_tool_calls": [],
+    "ground_truth": "The agent should ask clarifying questions \u2014 at minimum it needs the welding process (MIG, flux-cored, TIG, or Stick) and material/thickness before giving settings.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "comp_03",
+    "category": "complex",
+    "question": "What is the duty cycle for MIG welding at 300A on 240V?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "The Vulcan OmniPro 220 has a maximum rated amperage of 220A for MIG welding on 240V. 300A is out of range and not supported by this machine.",
+    "key_numbers": [
+      "220A",
+      "maximum"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
+  },
+  {
+    "id": "adv_01",
+    "category": "adversarial",
+    "question": "Can I use this machine for plasma cutting?",
+    "expected_tool_calls": [],
+    "ground_truth": "No. The Vulcan OmniPro 220 does not support plasma cutting. It is a multiprocess welder supporting MIG (GMAW), Flux-Cored (FCAW), TIG (GTAW), and Stick (SMAW) only. Plasma cutting requires a separate dedicated plasma cutter.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "adv_02",
+    "category": "adversarial",
+    "question": "I'm about to start flux-cored welding. I have my shielding gas hooked up and I'm using DCEP polarity. Is that correct?",
+    "expected_tool_calls": [
+      "get_machine_spec",
+      "get_visual"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "polarity",
+        "process": "flux_cored"
+      }
+    },
+    "ground_truth": "No \u2014 both are wrong. Self-shielded flux-cored wire does not use shielding gas; it shields itself through the flux core, and adding gas causes porosity. Flux-cored also requires DCEN polarity: ground clamp in the POSITIVE (+) socket and wire feed power in the NEGATIVE (\u2212) socket \u2014 the opposite of MIG.",
+    "key_numbers": [],
+    "expected_image_ids": [
+      "dcen_polarity_p13"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "PolarityDiagram"
+    }
+  },
+  {
+    "id": "adv_03",
+    "category": "adversarial",
+    "question": "What is the duty cycle for MIG welding at 160A on 120V?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "duty_cycle"
+      }
+    },
+    "ground_truth": "160A is out of range for MIG welding on 120V \u2014 the maximum rated output on 120V is 140A. For 160A MIG welding you need to switch to 240V, which supports up to 220A.",
+    "key_numbers": [
+      "140",
+      "220"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": {
+      "type": "widget",
+      "name": "DutyCycleCalculator"
+    }
+  },
+  {
+    "id": "adv_04",
+    "category": "adversarial",
+    "question": "What wire size should I buy?",
+    "expected_tool_calls": [],
+    "ground_truth": "The agent should not guess a wire size. It should ask clarifying questions \u2014 at minimum which welding process and what material and thickness \u2014 before recommending a wire diameter.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "nf_01",
+    "category": "no_info",
+    "question": "How long is the warranty on the OmniPro 220?",
+    "expected_tool_calls": [],
+    "expected_tool_inputs": null,
+    "ground_truth": "Warranty information is not covered in the owner's manual, selection chart, or quick start guide. The agent should not fabricate a warranty period and should direct the user to Harbor Freight or their purchase receipt.",
+    "key_numbers": [],
+    "no_info": true,
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "nf_02",
+    "category": "no_info",
+    "question": "What electrode should I use for welding cast iron with stick welding?",
+    "expected_tool_calls": [],
+    "expected_tool_inputs": null,
+    "ground_truth": "Cast iron electrode selection is not covered in the OmniPro 220 owner's manual. The manual covers general stick welding setup but not electrode recommendations by base metal type. The agent should say this isn't covered rather than fabricating electrode recommendations.",
+    "key_numbers": [],
+    "no_info": true,
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
+    "id": "nf_03",
+    "category": "no_info",
+    "question": "What is the maximum ambient operating temperature for this welder?",
+    "expected_tool_calls": [],
+    "expected_tool_inputs": null,
+    "ground_truth": "Ambient operating temperature range is not listed in the owner's manual, selection chart, or quick start guide. The agent should not fabricate a temperature specification.",
+    "key_numbers": [],
+    "no_info": true,
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   }
 ]
