@@ -2,12 +2,10 @@
   "labels": {
     "process":  { "mig": "MIG", "flux_cored": "Flux-Cored" },
     "material": { "mild_steel": "Mild Steel", "stainless": "Stainless", "aluminum": "Aluminum" },
-    "wire":     { "0.023": "0.023\"", "0.025": "0.025\"", "0.030": "0.030\"", "0.035": "0.035\"", "0.045": "0.045\"" }
+    "wire":     { "0.025": "0.025\"", "0.030": "0.030\"", "0.035": "0.035\"", "0.045": "0.045\"" }
   },
   "entries": [
-    { "process": "mig", "material": "mild_steel", "thickness_label": "24 ga", "thickness_in": 0.024, "wire": "0.023", "voltage_v": 14.5, "wfs_ipm":  70, "amp_lo":  25, "amp_hi":  35, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },
     { "process": "mig", "material": "mild_steel", "thickness_label": "24 ga", "thickness_in": 0.024, "wire": "0.025", "voltage_v": 15.0, "wfs_ipm":  75, "amp_lo":  25, "amp_hi":  35, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },
-    { "process": "mig", "material": "mild_steel", "thickness_label": "22 ga", "thickness_in": 0.031, "wire": "0.023", "voltage_v": 15.0, "wfs_ipm":  90, "amp_lo":  35, "amp_hi":  45, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },
     { "process": "mig", "material": "mild_steel", "thickness_label": "22 ga", "thickness_in": 0.031, "wire": "0.025", "voltage_v": 15.5, "wfs_ipm":  95, "amp_lo":  35, "amp_hi":  45, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },
     { "process": "mig", "material": "mild_steel", "thickness_label": "20 ga", "thickness_in": 0.037, "wire": "0.025", "voltage_v": 16.0, "wfs_ipm": 115, "amp_lo":  45, "amp_hi":  55, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },
     { "process": "mig", "material": "mild_steel", "thickness_label": "20 ga", "thickness_in": 0.037, "wire": "0.030", "voltage_v": 15.5, "wfs_ipm":  90, "amp_lo":  45, "amp_hi":  55, "ctwd_in": 0.375, "gas": "C25 @ 20–25 SCFH" },

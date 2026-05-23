@@ -1,5 +1,16 @@
 ## Wire Spool Installation
 
+### Spool Installation Steps
+
+1. Turn OFF the Power Switch and unplug the Power Cord from its electrical outlet.
+2. Open the storage compartment door on the side of the welder.
+3. Remove the spool knob and spring from the spindle.
+4. Place the new wire spool onto the spindle so that the wire feeds off the bottom of the spool (rotating counterclockwise).
+5. Reinstall the spring and spool knob.
+6. Release the idler arm on the wire feed mechanism.
+7. Thread the wire through the wire inlet liner, over the drive rolls, and into the gun liner.
+8. Secure the idler arm back into place and adjust the feed tensioner.
+
 ### Wire Drive Tension Check
 
 27. To check the wire's drive tension, press and hold Trigger to feed the wire against a piece of wood from 2 to 3 inches away.

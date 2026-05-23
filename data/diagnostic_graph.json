@@ -40,7 +40,7 @@
         },
         "pw_fc_technique": {
           "type": "terminal",
-          "fix": "Check technique: CTWD should be 3/8 to 1/2 inch. Use a 5\u201315\u00b0 drag angle (drag the gun away from the weld). Travel speed should be steady. Drafts and wind will blow away the self-generated shielding \u2014 use a welding screen outdoors.",
+          "fix": "Check technique: CTWD should be 3/8 to 1/2 inch. Use a 0\u201315\u00b0 drag angle (drag the gun away from the weld). Travel speed should be steady. Drafts and wind will blow away the self-generated shielding \u2014 use a welding screen outdoors.",
           "image_trigger": "push_drag_angle_p22"
         },
         "pw_gas_on": {
@@ -86,7 +86,7 @@
           "fix": "Check for drafts \u2014 even a light breeze will blow away shielding gas and cause porosity. Use a welding screen. If welding outdoors, increase gas flow to 30 SCFH or more."
         }
       },
-      "quick_tips": "Top causes by process: FLUX-CORED: (1) Wrong polarity \u2014 must be DCEN (ground to + socket, wire feed to - socket); (2) Shielding gas attached \u2014 flux-cored is self-shielded, remove gas; (3) Dirty base metal \u2014 wire brush/grind rust, paint, oil; (4) CTWD too long (max 1/2 inch), use 5-15 degree drag angle. MIG SOLID WIRE: (1) Gas not flowing \u2014 set 20-30 SCFH; (2) Wrong polarity \u2014 must be DCEP (ground to -, wire to +); (3) Nozzle clogged with spatter; (4) Drafts blowing away gas.",
+      "quick_tips": "Top causes by process: FLUX-CORED: (1) Wrong polarity \u2014 must be DCEN (ground to + socket, wire feed to - socket); (2) Shielding gas attached \u2014 flux-cored is self-shielded, remove gas; (3) Dirty base metal \u2014 wire brush/grind rust, paint, oil; (4) CTWD too long (max 1/2 inch), use 0-15 degree drag angle. MIG SOLID WIRE: (1) Gas not flowing \u2014 set 20-30 SCFH; (2) Wrong polarity \u2014 must be DCEP (ground to -, wire to +); (3) Nozzle clogged with spatter; (4) Drafts blowing away gas.",
       "quick_tips_images": [
         "dcen_polarity_p13",
         "dcep_polarity_p14"
@@ -399,7 +399,7 @@
         },
         "bt_amp_fix": {
           "type": "terminal",
-          "fix": "Reduce wire speed (amperage) by 15\u201320%. Also drop voltage one step. Use the thinnest wire diameter available \u2014 0.023\" wire gives better control on thin material than 0.030\". Lower heat input is the only fix for chronic burn-through.",
+          "fix": "Reduce wire speed (amperage) by 15\u201320%. Also drop voltage one step. Use the thinnest wire diameter available \u2014 0.025\" wire gives better control on thin material than 0.030\". Lower heat input is the only fix for chronic burn-through.",
           "image_trigger": "wire_weld_diagnosis_p35"
         },
         "bt_fitup": {
@@ -421,7 +421,7 @@
           "image_trigger": "wire_penetration_p36"
         }
       },
-      "quick_tips": "Top fixes: (1) Increase travel speed \u2014 keep moving, no pauses or wide weave; (2) Reduce wire speed (amperage) 15-20% and drop voltage one step; (3) Use thinnest wire available \u2014 0.023 inch for very thin material; (4) Ensure tight fit-up with no gaps; (5) Tack weld every 2-3 inches to distribute heat.",
+      "quick_tips": "Top fixes: (1) Increase travel speed \u2014 keep moving, no pauses or wide weave; (2) Reduce wire speed (amperage) 15-20% and drop voltage one step; (3) Use thinnest wire available \u2014 0.025 inch for very thin material; (4) Ensure tight fit-up with no gaps; (5) Tack weld every 2-3 inches to distribute heat.",
       "quick_tips_images": [
         "wire_weld_diagnosis_p35"
       ]

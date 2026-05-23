@@ -38,8 +38,8 @@
     },
     {
       "id": "tig_setup_p24",
-      "file": "assets/page_24.png",
-      "page": 24,
+      "file": "assets/page_23.png",
+      "page": 23,
       "source": "owner_manual",
       "description": "TIG cable setup: ground clamp in the POSITIVE (+) socket, TIG torch in the NEGATIVE (\u2212) socket (DCEN). Foot pedal connects to the interior control socket inside the machine's storage compartment. Shielding gas (100% Argon) connects to the gas inlet on the back of the machine.",
       "semantic_tags": [
@@ -78,7 +78,7 @@
       "file": "assets/page_7.png",
       "page": 7,
       "source": "owner_manual",
-      "description": "Front panel layout of the Vulcan OmniPro 220. Components labeled: Home button (returns to main screen), Back button, Left knob (secondary parameter), Main/center knob (primary setting), Right knob (fine adjust), LCD color display, MIG gun Eurofitting socket, Negative (\u2212) output socket, Positive (+) output socket, Spool gun gas outlet, storage compartment door (houses foot pedal socket), Power switch.",
+      "description": "Front panel layout of the Vulcan OmniPro 220. Components labeled: Home button (returns to main screen), Back button, Left knob (secondary parameter), Main/center knob (primary setting), Right knob (material thickness / voltage), LCD color display, MIG gun Eurofitting socket, Negative (\u2212) output socket, Positive (+) output socket, Spool gun gas outlet, storage compartment door (houses foot pedal socket), Power switch.",
       "semantic_tags": [
         "front panel",
         "LCD",
@@ -119,8 +119,8 @@
     },
     {
       "id": "wire_weld_diagnosis_p35",
-      "file": "assets/page_36.png",
-      "page": 36,
+      "file": "assets/page_34.png",
+      "page": 34,
       "source": "owner_manual",
       "description": "Four-panel wire weld defect diagnosis chart with top-view diagrams and corrective actions. Shows common wire weld defects: porosity/contamination, incorrect voltage/wire speed, incorrect travel speed, and CTWD issues. Each panel shows the bead appearance and lists probable causes and corrections.",
       "semantic_tags": [

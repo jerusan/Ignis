@@ -2,8 +2,8 @@
   {
     "code": "E01",
     "name": "Input Power Fault",
-    "cause": "Input voltage too low, unstable, or outside rated range. Often caused by an undersized extension cord or a shared circuit with high-draw appliances.",
-    "action": "Verify input voltage is within range (120 V: 104–132 V; 240 V: 208–264 V). Use a dedicated 20 A (120 V) or 30 A (240 V) circuit. Limit extension cords to 25 ft and use 12 AWG or heavier."
+    "cause": "Input voltage too low, unstable, or outside rated range. Often caused by a shared circuit with high-draw appliances.",
+    "action": "Verify input voltage is within range (120 V: 104–132 V; 240 V: 208–264 V). Use a dedicated 20 A (120 V) or 30 A (240 V) circuit. Do not use an extension cord — the manual explicitly prohibits extension cord use on this welder."
   },
   {
     "code": "E02",
@@ -33,6 +33,6 @@
     "code": "E06",
     "name": "Output Short Circuit",
     "cause": "Output terminals shorted. Wire contacted the workpiece before the arc established, the trigger was held while wire was jammed, or the gun cable is internally shorted.",
-    "action": "Release the trigger. Clear any wire jam at the contact tip. Set stickout to 1/4–3/8 inch before triggering. Inspect the gun cable for kinks or internal shorts; replace if damaged."
+    "action": "Release the trigger. Clear any wire jam at the contact tip. Set stickout to 1/2 inch before triggering. Inspect the gun cable for kinks or internal shorts; replace if damaged."
   }
 ]
