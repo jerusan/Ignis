@@ -100,7 +100,7 @@
       "file": "assets/page_8.png",
       "page": 8,
       "source": "owner_manual",
-      "description": "Interior controls diagram (accessed by opening the side door). Components labeled: cold wire feed switch (jogs wire without striking arc), idler arm with tension knob, drive rolls, wire spool hub with brake knob, wire inlet guide, feed roller knob (selects drive roll groove size), wire feed control socket (24V trigger circuit), foot pedal socket.",
+      "description": "Interior controls diagram (accessed by opening the side door). Components labeled: cold wire feed switch (jogs wire without striking arc), idler arm with tension knob, drive rolls, wire spool hub with brake knob, Wire Inlet Liner, feed roller knob (selects drive roll groove size), wire feed control socket, foot pedal socket.",
       "semantic_tags": [
         "interior",
         "drive roll",
@@ -122,7 +122,7 @@
       "file": "assets/page_34.png",
       "page": 34,
       "source": "owner_manual",
-      "description": "Four-panel wire weld defect diagnosis chart with top-view diagrams and corrective actions. Shows common wire weld defects: porosity/contamination, incorrect voltage/wire speed, incorrect travel speed, and CTWD issues. Each panel shows the bead appearance and lists probable causes and corrections.",
+      "description": "Six-panel Example Wire Weld Diagrams with bead cross-section illustrations and corrective actions: (1) Good Weld — reference; (2) Voltage Too Low or Wire Feed Too Slow — increase output voltage or wire feed speed; (3) Voltage Too High or Wire Feed Too Fast — decrease output voltage or wire feed speed; (4) Travel Speed Too Fast — travel slower; (5) Travel Speed Too Slow — travel faster; (6) CTWD Too Long or Wrong Polarity — check polarity and maintain less than 1/2\" CTWD. Page also includes a heat control diagram showing three weld penetration profiles (inadequate, proper, excess) and the factors that increase or reduce workpiece heat: weld current, travel speed, wire feed speed, and CTWD.",
       "semantic_tags": [
         "weld diagnosis",
         "bead appearance",
@@ -203,7 +203,7 @@
     {
       "id": "qsg_cable_setups",
       "file": "assets/qsg_page_1.png",
-      "page": 1,
+      "page": 2,
       "source": "qsg",
       "description": "Quick start guide page showing all four cable setup configurations side by side: Stick DCEP (electrode to +, ground to \u2212), MIG DCEP (wire feed to +, ground to \u2212), Flux-cored DCEN (wire feed to \u2212, ground to +), TIG DCEN (torch to \u2212, ground to +). Color-coded diagrams with clear socket labels.",
       "semantic_tags": [

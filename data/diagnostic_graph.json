@@ -103,7 +103,7 @@
         },
         "ps_damp": {
           "type": "terminal",
-          "fix": "Electrodes have absorbed moisture. Discard them or dry low-hydrogen electrodes in an oven at 250\u2013300\u00b0F for 1\u20132 hours. Store electrodes in a sealed container or rod oven. Damp electrodes cause porosity, hydrogen cracking, and rough arc behavior."
+          "fix": "Electrodes from an opened package may have absorbed moisture or surface contaminants. Discard and replace them. The manual specifies that fill material and electrodes must be clean and free from oil, coatings, and other residues. Store unused electrodes in a sealed container to prevent exposure."
         },
         "ps_arc": {
           "question": "Is the arc length approximately equal to the electrode core diameter (roughly 1/8 inch for a 1/8\" rod)?",
@@ -140,7 +140,7 @@
           "image_trigger": "stick_weld_diagnosis_p38"
         }
       },
-      "quick_tips": "Top causes: (1) Damp/old electrodes \u2014 dry in oven at 250-300 F for 1-2 hours; (2) Arc too long \u2014 keep arc length equal to electrode core diameter; (3) Wrong polarity \u2014 most stick electrodes need DCEP (electrode to +, ground to -); (4) Heavy surface contamination.",
+      "quick_tips": "Top causes: (1) Old or exposed electrodes \u2014 discard and replace; fill material and electrodes must be clean and free from oil, coatings, and residues; (2) Arc too long \u2014 keep arc length equal to electrode core diameter; (3) Wrong polarity \u2014 most stick electrodes need DCEP (electrode to +, ground to -); (4) Heavy surface contamination.",
       "quick_tips_images": []
     },
     "birds_nest": {
@@ -315,7 +315,7 @@
         },
         "ai_settings": {
           "type": "terminal",
-          "fix": "Check that wire speed isn't set too low \u2014 minimum effective wire speed is around 100 IPM for most diameters. Also verify the correct process is selected on the display and the machine isn't in lock mode.",
+          "fix": "Check that wire speed isn't set too low \u2014 the machine's wire speed range is 50\u2013500 IPM; very low settings may not sustain an arc. Also verify the correct process is selected on the display and the machine isn't in lock mode.",
           "image_trigger": "front_panel_p8"
         }
       },

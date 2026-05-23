@@ -4,7 +4,6 @@
       "process": "MIG",
       "voltage": "120V",
       "pct_40": 100,
-      "pct_60": 85,
       "pct_100": 75,
       "range_min": 30,
       "range_max": 140
@@ -13,7 +12,6 @@
       "process": "MIG",
       "voltage": "240V",
       "pct_25": 200,
-      "pct_60": 130,
       "pct_100": 115,
       "range_min": 30,
       "range_max": 220
@@ -22,7 +20,6 @@
       "process": "flux_cored",
       "voltage": "120V",
       "pct_40": 100,
-      "pct_60": 85,
       "pct_100": 75,
       "range_min": 30,
       "range_max": 140
@@ -31,7 +28,6 @@
       "process": "flux_cored",
       "voltage": "240V",
       "pct_25": 200,
-      "pct_60": 130,
       "pct_100": 115,
       "range_min": 30,
       "range_max": 220
@@ -40,7 +36,6 @@
       "process": "TIG",
       "voltage": "120V",
       "pct_40": 125,
-      "pct_60": 105,
       "pct_100": 90,
       "range_min": 10,
       "range_max": 125
@@ -49,7 +44,6 @@
       "process": "TIG",
       "voltage": "240V",
       "pct_30": 175,
-      "pct_60": 125,
       "pct_100": 105,
       "range_min": 10,
       "range_max": 175
@@ -58,7 +52,6 @@
       "process": "Stick",
       "voltage": "120V",
       "pct_40": 80,
-      "pct_60": 70,
       "pct_100": 60,
       "range_min": 10,
       "range_max": 80
@@ -67,7 +60,6 @@
       "process": "Stick",
       "voltage": "240V",
       "pct_25": 175,
-      "pct_60": 115,
       "pct_100": 100,
       "range_min": 10,
       "range_max": 175
@@ -148,12 +140,12 @@
   },
   "input_power": {
     "120V": {
-      "input_current_rated": "20A",
+      "input_current_rated": "20.8A",
       "breaker_minimum": "20A dedicated circuit",
       "plug_type": "NEMA 5-20P"
     },
     "240V": {
-      "input_current_rated": "27A",
+      "input_current_rated": "25.5A",
       "breaker_minimum": "30A",
       "plug_type": "NEMA 6-50P"
     }

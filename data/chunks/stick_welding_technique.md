@@ -40,3 +40,36 @@ Good welding takes a degree of skill and experience. Practice a few sample welds
 **Make practice welds on pieces of scrap to practice technique before welding anything of value.**
 
 **Practice your welding technique on scrap pieces before welding anything of value.**
+
+## Welding Execution
+
+8. Place the bare metal end of the Stick Electrode (sold separately) inside the jaws of the Electrode Holder.
+
+9. Stroke the workpiece lightly to ignite the arc. Tips for igniting the arc:
+
+    a. Tap the surface with the Electrode.
+
+    b. Stroke the surface with the Electrode.
+
+    c. Strike the surface like a match with the Electrode.
+
+10. After the arc ignites:
+
+    a. Lift the Electrode off the workpiece the same distance as the diameter of the bare metal end.
+
+    b. Tilt Electrode back 10 to 20 degrees.
+
+    c. Drag Electrode to the back end of the weld puddle to deposit material as needed.
+
+11. When finished welding; lift the Electrode from the workpiece, then set Electrode Holder down on nonconductive, nonflammable surface away from any grounded objects.
+
+12. Turn the Power Switch OFF.
+
+13. To prevent accidents, after use:
+
+    - Allow Welder to cool down.
+    - Unplug Welder's power cord from outlet.
+    - Remove Ground Clamp.
+    - Disconnect Electrode Holder and Ground Cables.
+
+14. Clean, then store Welder and its accessories indoors out of children's reach.
