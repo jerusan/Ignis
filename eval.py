@@ -320,7 +320,7 @@ Agent showed image: {showed_image}"""
 
     try:
         resp = client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-4-20250514",
             max_tokens=400,
             temperature=0,
             system=JUDGE_SYSTEM,

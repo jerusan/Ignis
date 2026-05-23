@@ -72,7 +72,7 @@ def export_png(doc: fitz.Document, page_idx: int, out_path: Path) -> None:
 def run_vision(img_path: Path, client: anthropic.Anthropic) -> str:
     img_b64 = base64.standard_b64encode(img_path.read_bytes()).decode()
     resp = client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-4-20250514",
         max_tokens=1500,
         messages=[{
             "role": "user",

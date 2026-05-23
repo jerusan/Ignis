@@ -26,7 +26,7 @@ from .session import get_session
 
 ROOT = Path(__file__).parent.parent
 CHUNKS_DIR = ROOT / "data" / "chunks"
-MODEL = "claude-sonnet-4-6"
+MODEL = "claude-sonnet-4-20250514"
 MAX_TOKENS = 4096
 MAX_TOOL_ITERATIONS = 5
 
