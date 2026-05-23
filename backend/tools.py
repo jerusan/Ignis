@@ -135,6 +135,54 @@ TOOL_DEFINITIONS = [
             "required": ["query"],
         },
     },
+    {
+        "name": "get_fault_code",
+        "description": (
+            "Retrieve details, causes, and corrective actions for LCD warning messages displayed by the machine. "
+            "Always call this when the user mentions a warning shown on the LCD screen."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "enum": ["Duty Cycle Exceeded", "Low Voltage Input", "High Voltage Input"],
+                    "description": "The exact warning text displayed on the LCD screen.",
+                }
+            },
+            "required": ["code"],
+        },
+    },
+    {
+        "name": "get_synergic_settings",
+        "description": (
+            "Retrieve the recommended voltage, wire feed speed (WFS), amperage range, gas flow, and "
+            "notes for a specific welding process, material type, material thickness, and wire diameter "
+            "from the synergic baseline parameter grid."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "process": {
+                    "type": "string",
+                    "description": "Welding process (MIG or flux_cored).",
+                },
+                "material": {
+                    "type": "string",
+                    "description": "Base metal material (mild_steel, stainless, or aluminum).",
+                },
+                "thickness": {
+                    "type": "string",
+                    "description": "Material thickness (e.g. 1/8\", 24 ga, 14 ga, 0.125).",
+                },
+                "wire_size": {
+                    "type": "string",
+                    "description": "Diameter of the welding wire (e.g. 0.030\", 0.035, 0.023).",
+                },
+            },
+            "required": ["process", "material", "thickness", "wire_size"],
+        },
+    },
 ]
 
 
@@ -143,6 +191,23 @@ TOOL_DEFINITIONS = [
 _specs: dict | None = None
 _graph: dict | None = None
 _registry: dict | None = None
+_fault_codes: list | None = None
+_baseline_grid: dict | None = None
+
+
+def _fault_codes_data() -> list:
+    global _fault_codes
+    if _fault_codes is None:
+        _fault_codes = json.loads((DATA_DIR / "fault_codes.json").read_text())
+    return _fault_codes
+
+
+def _baseline_grid_data() -> dict:
+    global _baseline_grid
+    if _baseline_grid is None:
+        _baseline_grid = json.loads((DATA_DIR / "baseline_grid.json").read_text())
+    return _baseline_grid
+
 
 
 def _specs_data() -> dict:
@@ -333,6 +398,19 @@ _SECTION_CHUNKS: dict[str, list[str]] = {
 }
 
 
+CHUNK_PAGE_MAPPING = {
+    "maintenance": 33,
+    "mig_welding_technique": 21,
+    "optional_settings": 18,
+    "safety_warnings": 3,
+    "stick_welding_technique": 28,
+    "tig_torch_assembly": 25,
+    "tungsten_grinding": 25,
+    "wire_feed_setup": 18,
+    "wire_spool_install": 10,
+}
+
+
 def search_manual(query: str, section: str = "all", session_id: str | None = None) -> dict:
     chunks_dir = DATA_DIR / "chunks"
     chunk_names = _SECTION_CHUNKS.get(section) if section != "all" else None
@@ -395,8 +473,126 @@ def search_manual(query: str, section: str = "all", session_id: str | None = Non
     # Return top 2 chunks to avoid bloating context
     top = results[:2]
     return {
-        "results": [{"chunk": r["chunk"], "content": r["content"]} for r in top],
+        "results": [
+            {
+                "chunk": r["chunk"],
+                "content": f"[Source: Owner's Manual, Page {CHUNK_PAGE_MAPPING.get(r['chunk'], 'N/A')}]\n\n{r['content']}"
+            }
+            for r in top
+        ],
         "total_chunks_searched": len(list(chunks_dir.glob("*.md"))),
+    }
+
+
+def get_fault_code(code: str) -> dict:
+    data = _fault_codes_data()
+    code_normalized = code.strip().lower()
+    for entry in data:
+        if entry["code"].lower() == code_normalized:
+            return entry
+    return {"error": f"Unknown LCD warning: {code}"}
+
+
+def get_synergic_settings(process: str, material: str, thickness: str, wire_size: str) -> dict:
+    proc = process.lower().strip()
+    if proc in ("mig", "gmaw"):
+        proc = "mig"
+    elif proc in ("flux_cored", "flux-cored", "fcaw", "flux cored"):
+        proc = "flux_cored"
+
+    mat = material.lower().strip().replace(" ", "_")
+    if mat in ("mild_steel", "steel", "carbon_steel"):
+        mat = "mild_steel"
+    elif mat in ("stainless", "stainless_steel"):
+        mat = "stainless"
+    elif mat in ("aluminum", "aluminium"):
+        mat = "aluminum"
+
+    # Wire size normalization
+    wire = wire_size.replace('"', '').replace('inch', '').strip()
+    if wire.startswith("."):
+        wire = "0" + wire
+    elif wire in ("30", "030"):
+        wire = "0.030"
+    elif wire in ("35", "035"):
+        wire = "0.035"
+    elif wire in ("23", "023"):
+        wire = "0.023"
+    elif wire in ("45", "045"):
+        wire = "0.045"
+    elif wire in ("25", "025"):
+        wire = "0.025"
+    # Ensure 3 decimals for 0.0x
+    if wire.startswith("0.0") and len(wire) == 4:
+        wire = wire + "0"
+
+    grid_data = _baseline_grid_data()
+    candidates = []
+    for entry in grid_data["entries"]:
+        if entry["process"] == proc and entry["material"] == mat and entry["wire"] == wire:
+            candidates.append(entry)
+
+    if not candidates:
+        fallback_candidates = [e for e in grid_data["entries"] if e["process"] == proc and e["material"] == mat]
+        if fallback_candidates:
+            available_wires = sorted(list(set(e["wire"] for e in fallback_candidates)))
+            return {
+                "error": f"No synergic settings found for {process} on {material} with {wire_size} wire.",
+                "available_wires": [f"{w}\"" for w in available_wires]
+            }
+        return {"error": f"No settings found for process={process}, material={material}"}
+
+    # Normalize target thickness
+    clean_thick = thickness.lower().replace('"', '').replace(' ', '').replace('\\', '').strip()
+    float_thick = None
+    if "/" in clean_thick:
+        try:
+            num, denom = clean_thick.split("/")
+            float_thick = float(num) / float(denom)
+        except ValueError:
+            pass
+    else:
+        try:
+            float_thick = float(clean_thick.replace("ga", ""))
+        except ValueError:
+            pass
+
+    # Try to find direct label match
+    for c in candidates:
+        c_label = c["thickness_label"].lower().replace('"', '').replace(' ', '').replace('\\', '').strip()
+        if c_label == clean_thick or c_label.replace("ga", "") == clean_thick.replace("ga", ""):
+            return {"setting": c, "match_type": "exact_label"}
+
+    # Try to find float match if we have float_thick and target is not gauge
+    if float_thick is not None and "ga" not in clean_thick:
+        best_c = None
+        min_diff = float("inf")
+        for c in candidates:
+            diff = abs(c["thickness_in"] - float_thick)
+            if diff < min_diff:
+                min_diff = diff
+                best_c = c
+        if min_diff < 0.015:
+            return {"setting": best_c, "match_type": "float_proximity", "difference_inches": round(min_diff, 4)}
+
+    # Fallback to closest approximation
+    if float_thick is not None:
+        if "ga" in clean_thick:
+            val = (0.024 if "24" in clean_thick else 0.031 if "22" in clean_thick else 0.037 if "20" in clean_thick
+                   else 0.047 if "18" in clean_thick else 0.059 if "16" in clean_thick else 0.074 if "14" in clean_thick else 0.0)
+        else:
+            val = float_thick
+        best_c = min(candidates, key=lambda c: abs(c["thickness_in"] - val))
+        return {
+            "setting": best_c,
+            "match_type": "closest_approximation",
+            "note": f"Exact thickness '{thickness}' not in grid. Showing closest settings for {best_c['thickness_label']}."
+        }
+
+    available_thicknesses = [c["thickness_label"] for c in candidates]
+    return {
+        "error": f"Thickness '{thickness}' not found in baseline grid.",
+        "available_thicknesses": available_thicknesses
     }
 
 
@@ -426,5 +622,16 @@ def execute_tool(name: str, tool_input: dict, session_id: str) -> dict:
             query=tool_input["query"],
             section=tool_input.get("section", "all"),
             session_id=session_id,
+        )
+    if name == "get_fault_code":
+        return get_fault_code(
+            code=tool_input["code"],
+        )
+    if name == "get_synergic_settings":
+        return get_synergic_settings(
+            process=tool_input["process"],
+            material=tool_input["material"],
+            thickness=tool_input["thickness"],
+            wire_size=tool_input["wire_size"],
         )
     return {"error": f"Unknown tool: {name}"}

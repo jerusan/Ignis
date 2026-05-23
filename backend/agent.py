@@ -21,14 +21,14 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
-from .tools import TOOL_DEFINITIONS, execute_tool
+from .tools import TOOL_DEFINITIONS, execute_tool, CHUNK_PAGE_MAPPING
 from .session import get_session
 
 ROOT = Path(__file__).parent.parent
 CHUNKS_DIR = ROOT / "data" / "chunks"
 MODEL = "claude-sonnet-4-20250514"
 MAX_TOKENS = 4096
-MAX_TOOL_ITERATIONS = 8
+MAX_TOOL_ITERATIONS = 5
 
 _client: anthropic.Anthropic | None = None
 
@@ -40,14 +40,15 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-# ── Manual context (loaded once at import time) ────────────────────────────────
-
 def _load_manual_context() -> str:
     if not CHUNKS_DIR.exists():
         return ""
     parts: list[str] = []
     for md_file in sorted(CHUNKS_DIR.glob("*.md")):
-        parts.append(f"## {md_file.stem.replace('_', ' ').title()}\n\n{md_file.read_text()}")
+        name = md_file.stem
+        page = CHUNK_PAGE_MAPPING.get(name, "N/A")
+        title = name.replace('_', ' ').title()
+        parts.append(f"## {title} (Page {page})\n\n{md_file.read_text()}")
     return "\n\n---\n\n".join(parts)
 
 
@@ -56,7 +57,7 @@ _MANUAL_CONTEXT = _load_manual_context()
 
 # ── System prompt ──────────────────────────────────────────────────────────────
 
-_SYSTEM_TEMPLATE = """\
+_SYSTEM_TEMPLATE_CORE = """\
 You are Ignis, the expert assistant for the Vulcan OmniPro 220 multiprocess welder.
 
 Your user just bought this machine and is standing in their garage. They're not a \
@@ -173,6 +174,10 @@ current configuration as they interact with the artifact:
    ```
    Valid payload keys: `process`, `voltage`, `material`, `thickness`, `wire_size`.
 
+8. **For LCD warning messages displayed by the machine ("Duty Cycle Exceeded", "Low Voltage Input", "High Voltage Input"), always call `get_fault_code` first.** Never guess or describe causes or actions from memory.
+9. **For recommended synergic settings (voltage, wire feed speed, amperage range, gas) for specific materials and thicknesses, always call `get_synergic_settings` first.** Never quote these numbers from memory.
+10. **For any questions about welding techniques (like push/drag angles, weave vs stringer beads, tungsten grinding), manual procedures, setup steps, or maintenance instructions, always call `search_manual` first.** Even though the manual contents are in your system prompt, you must explicitly route to the `search_manual` tool for these queries to show your audit trail.
+
 ## Spatial highlighting — visual-first field workstation protocol
 
 You are a field technician workstation, not a document generator. \
@@ -269,51 +274,47 @@ After calling `get_visual` OR when `diagnose_defect` returns a `show_image` fiel
 
 Always embed the image inline — don't just mention it exists.
 
-## Session context
-
-The user's current workbench setup:
-{session_context}
-
-If session fields are null, you don't know their setup yet. You can ask one \
-clarifying question if it materially changes your answer (e.g., 120V vs 240V \
-for duty cycle questions).
-
-## Full manual reference
-
-{manual_context}
 """
-
-
-# def _build_system_prompt(session_id: str) -> str:
-#     session = get_session(session_id)
-#     # Only include non-null fields to keep prompt compact
-#     context = {k: v for k, v in session.items() if v is not None}
-#     session_context = json.dumps(context, indent=2) if context else "{}"
-#     return (
-#         _SYSTEM_TEMPLATE
-#         .replace("{session_context}", session_context)
-#         .replace("{manual_context}", _MANUAL_CONTEXT)
-#     )
 
 def _build_system_prompt(session_id: str) -> list[dict]:
     session = get_session(session_id)
-
-    # Dynamic per-session context
     context = {k: v for k, v in session.items() if v is not None}
     session_context = json.dumps(context, indent=2) if context else "{}"
 
     return [
+        # Static rules — identical across all sessions; cache checkpoint here
         {
             "type": "text",
-            "text": _SYSTEM_TEMPLATE.replace(
-                "{session_context}",
-                session_context,
-            ),
+            "text": _SYSTEM_TEMPLATE_CORE,
+            "cache_control": {"type": "ephemeral"},
         },
+        # Full manual — stable; cache checkpoint behind stable prefix above
         {
             "type": "text",
             "text": _MANUAL_CONTEXT,
             "cache_control": {"type": "ephemeral"},
+        },
+        # Dynamic session state — changes per user; never cached
+        {
+            "type": "text",
+            "text": (
+                "## Session context\n\n"
+                "The user's current workbench setup:\n"
+                f"{session_context}\n\n"
+                "If session fields are null, you don't know their setup yet. "
+                "You can ask one clarifying question if it materially changes "
+                "your answer (e.g., 120V vs 240V for duty cycle questions)."
+            ),
+        },
+        {
+            "type": "text",
+            "text": (
+                "CRITICAL TOOL CALLING REMINDER:\n"
+                "Before answering, you MUST call the appropriate tool to look up details:\n"
+                "- For LCD warning messages (\"Duty Cycle Exceeded\", \"Low Voltage Input\", \"High Voltage Input\"), you MUST call `get_fault_code` first.\n"
+                "- For recommended synergic settings, you MUST call `get_synergic_settings` first.\n"
+                "- For any questions about manual procedures, setup steps, maintenance instructions, or welding techniques (like push/drag angles, weave vs stringer beads, tungsten grinding), you MUST call `search_manual` first."
+            ),
         },
     ]
 
@@ -332,6 +333,8 @@ def run_agent(messages: list[dict], session_id: str) -> Generator[dict, None, No
     api_messages = list(messages)
     total_input_tokens = 0
     total_output_tokens = 0
+    total_cache_read = 0
+    total_cache_write = 0
 
     for _iteration in range(MAX_TOOL_ITERATIONS):
         # Stream this turn
@@ -356,8 +359,14 @@ def run_agent(messages: list[dict], session_id: str) -> Generator[dict, None, No
 
             final_msg = stream.get_final_message()
 
-        total_input_tokens += final_msg.usage.input_tokens
-        total_output_tokens += final_msg.usage.output_tokens
+        usage = final_msg.usage
+        total_input_tokens += usage.input_tokens
+        total_output_tokens += usage.output_tokens
+        cache_read = getattr(usage, "cache_read_input_tokens", 0) or 0
+        cache_write = getattr(usage, "cache_creation_input_tokens", 0) or 0
+        total_cache_read += cache_read
+        total_cache_write += cache_write
+        print(f"[tokens] in={usage.input_tokens} out={usage.output_tokens} cache_write={cache_write} cache_read={cache_read}")
 
         # Collect tool use blocks from the final message
         tool_use_blocks = [b for b in final_msg.content if b.type == "tool_use"]
@@ -386,5 +395,7 @@ def run_agent(messages: list[dict], session_id: str) -> Generator[dict, None, No
         "type": "done",
         "input_tokens": total_input_tokens,
         "output_tokens": total_output_tokens,
+        "cache_read_tokens": total_cache_read,
+        "cache_write_tokens": total_cache_write,
         "session_context": get_session(session_id),
     }
