@@ -5,11 +5,8 @@ import {
   ChevronRightIcon,
   WrenchIcon,
 } from 'lucide-react';
-import {
-  SpatialViewport,
-  REGISTRY_BY_VIEW,
-  MachineView,
-} from '../SpatialViewport';
+import { SpatialViewport, REGISTRY_BY_VIEW } from '../SpatialViewport';
+import type { MachineView } from '../../types/chat';
 import type { SpatialContextTag } from '../../lib/artifacts';
 import { useWorkbench } from '../WorkbenchOverlay';
 

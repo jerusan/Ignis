@@ -1,284 +1,33 @@
-// frontend/src/components/SpatialViewport.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-
 import type {
-  SpatialControlPoint,
-  WelderTelemetry,
-  MachineView,
-} from '../types/chat';
+    SpatialControlPoint,
+    WelderTelemetry,
+    MachineView,
+} from '../../types/chat';
+import { WELDER_FRONT_REGISTRY } from './registryData';
+import {
+    resolveTooltipStyle,
+    buildOrthogonalPath,
+    segmentMidpoints,
+    arrowPath,
+} from './helpers';
+import TelemetryHUD from './TelemetryHUD';
+import HoverTooltip from './HoverTooltip';
 
-export type {
-  SpatialControlPoint,
-  WelderTelemetry,
-  MachineView,
-};
-
-export const WELDER_FRONT_REGISTRY: Record<string, SpatialControlPoint> = {
-    "home_button": {
-        x: 352,
-        y: 401,
-        radius: 23,
-        title: "Home Button",
-        desc: "Returns the user interface to the main home screen or default menu."
-    },
-    "back_button": {
-        x: 641,
-        y: 399,
-        radius: 25,
-        title: "Back Button",
-        desc: "Navigates back to the previous screen or menu level in the user interface."
-    },
-    "lcd_display": {
-        x: 496,
-        y: 380,
-        radius: 46,
-        title: "LCD Display",
-        desc: "Shows the current welding parameters, settings, status messages, and menu options."
-    },
-    "control_knob": {
-        x: 501,
-        y: 504,
-        radius: 33,
-        title: "Control Knob",
-        desc: "A central rotary knob used to navigate menus, adjust settings, and make selections."
-    },
-    "left_knob": {
-        x: 387,
-        y: 501,
-        radius: 26,
-        title: "Left Knob",
-        desc: "A side-mounted knob, likely used to adjust specific parameters such as voltage or wire feed speed."
-    },
-    "right_knob": {
-        x: 610,
-        y: 500,
-        radius: 28,
-        title: "Right Knob",
-        desc: "A side-mounted knob, likely used to adjust complementary parameters or settings."
-    },
-    "power_switch": {
-        x: 469,
-        y: 686,
-        radius: 25,
-        title: "Power Switch",
-        desc: "The main toggle switch to turn the welder's power on or off."
-    },
-    "mig_gun_spool_gun_cable_socket": {
-        x: 402,
-        y: 806,
-        radius: 25,
-        title: "MIG Gun / Spool Gun Cable Socket",
-        desc: "Connector port for attaching the MIG or Spool Gun cable to the welder."
-    },
-    "spool_gun_gas_outlet": {
-        x: 346,
-        y: 702,
-        radius: 33,
-        title: "Spool Gun Gas Outlet",
-        desc: "Port for connecting the gas supply line when using a Spool Gun for MIG welding."
-    },
-    "positive_socket": {
-        x: 645,
-        y: 805,
-        radius: 30,
-        title: "Positive Socket",
-        desc: "Terminal for connecting the positive output cable, typically to the workpiece or ground clamp."
-    },
-    "negative_socket": {
-        x: 503,
-        y: 808,
-        radius: 30,
-        title: "Negative Socket",
-        desc: "Terminal for connecting the negative output cable, typically to the welding torch or gun."
-    },
-    "wire_feed_power_cable": {
-        x: 570,
-        y: 837,
-        radius: 21,
-        title: "Wire Feed Power Cable",
-        desc: "Cable that supplies power to the wire feed mechanism, often connected to the welding gun."
-    },
-    "storage_compartment": {
-        x: 495,
-        y: 592,
-        radius: 26,
-        title: "Storage Compartment",
-        desc: "Internal or external compartment for storing accessories, manuals, or small tools."
-    }
-};
-
-export const WELDER_INTERIOR_REGISTRY: Record<string, SpatialControlPoint> = {
-    "wire_spool": {
-        x: 354,
-        y: 651,
-        radius: 25,
-        title: "Wire Spool",
-        desc: "The cylindrical holder that contains the welding wire. It rotates as wire is fed and is mounted on the spool shaft."
-    },
-    "spool_knob": {
-        x: 406,
-        y: 723,
-        radius: 45,
-        title: "Spool Knob",
-        desc: "Used to secure or release the wire spool for loading or changing wire. Rotates to lock or unlock the spool in place."
-    },
-    "wire_inlet_liner": {
-        x: 585,
-        y: 672,
-        radius: 20,
-        title: "Wire Inlet Liner",
-        desc: "A guide tube or liner at the wire entry point that ensures smooth wire transition into the feed mechanism and reduces friction or binding."
-    },
-    "cold_wire_feed_switch": {
-        x: 653,
-        y: 552,
-        radius: 12,
-        title: "Cold Wire Feed Switch",
-        desc: "A toggle or button that allows the user to manually advance wire without initiating an arc (cold feed), useful for threading or testing wire feed."
-    },
-    "wire_feed_control_socket": {
-        x: 723,
-        y: 806,
-        radius: 20,
-        title: "Wire Feed Control Socket",
-        desc: "A connector port for attaching an external wire feed control device, such as a remote hand-held control or a separate feed unit."
-    },
-    "wire_feed_mechanism": {
-        x: 606,
-        y: 635,
-        radius: 15,
-        title: "Wire Feed Mechanism",
-        desc: "The internal assembly of gears, rollers, and motors that drives the wire from the spool through the gun. It is the core component for wire feeding."
-    },
-    "foot_pedal_socket": {
-        x: 671,
-        y: 797,
-        radius: 18,
-        title: "Foot Pedal Socket",
-        desc: "A connector port for plugging in an external foot pedal, allowing hands-free control of welding output or wire feed start/stop."
-    },
-    "feed_roller_knob": {
-        x: 658,
-        y: 724,
-        radius: 21,
-        title: "Feed Roller Knob",
-        desc: "Adjusts the pressure of the feed rollers against the welding wire to ensure proper wire feeding. Turning it changes the grip force on the wire."
-    },
-    "idler_arm": {
-        x: 686,
-        y: 654,
-        radius: 14,
-        title: "Idler Arm",
-        desc: "A mechanical arm that applies pressure to the wire via the idler roller. It is often spring-loaded and works in conjunction with the feed rollers to guide the wire."
-    },
-    "feed_tensioner": {
-        x: 653,
-        y: 614,
-        radius: 16,
-        title: "Feed Tensioner",
-        desc: "Adjusts the tension applied to the welding wire as it is fed through the system. Proper tension prevents wire slippage or over-pulling."
-    }
-};
-
-export const WELDER_REAR_REGISTRY: Record<string, SpatialControlPoint> = {
-    "power_input_socket": {
-        x: 353,
-        y: 367,
-        radius: 88,
-        title: "Power Input Socket",
-        desc: "The main AC power input for the welder, where the power cord is connected to supply electricity to the unit."
-    },
-    "cooling_fan": {
-        x: 412,
-        y: 810,
-        radius: 166,
-        title: "Cooling Fan",
-        desc: "A fan that helps dissipate heat generated by the welder's internal components during operation."
-    },
-    "gas_inlet": {
-        x: 302,
-        y: 540,
-        radius: 41,
-        title: "Gas Inlet",
-        desc: "The point where shielding gas is connected to the welder for protection of the weld zone."
-    },
-    "reset_button": {
-        x: 427,
-        y: 540,
-        radius: 22,
-        title: "Reset Button",
-        desc: "A button that resets the welder to its default settings."
-    }
-};
-
-export const REGISTRY_BY_VIEW: Record<MachineView, Record<string, SpatialControlPoint>> = {
-    front: WELDER_FRONT_REGISTRY,
-    interior: WELDER_INTERIOR_REGISTRY,
-    back: WELDER_REAR_REGISTRY,
-};
-
-// ─── Tooltip positioning ───────────────────────────────────────────────────
-function resolveTooltipStyle(point: SpatialControlPoint): React.CSSProperties {
-    const xPct = point.x / 10;
-    const yPct = point.y / 10;
-    const rPct = point.radius / 10;
-    const above = yPct > 45;
-    const vertical: React.CSSProperties = above
-        ? { bottom: `${100 - (yPct - rPct) + 0.8}%` }
-        : { top: `${yPct + rPct + 0.8}%` };
-    let horizontal: React.CSSProperties;
-    if (xPct < 28) horizontal = { left: '2%' };
-    else if (xPct > 72) horizontal = { right: '2%' };
-    else horizontal = { left: `${xPct}%`, transform: 'translateX(-50%)' };
-    return { position: 'absolute', zIndex: 20, pointerEvents: 'none', ...vertical, ...horizontal };
-}
+export {
+  WELDER_FRONT_REGISTRY,
+  WELDER_INTERIOR_REGISTRY,
+  WELDER_REAR_REGISTRY,
+  REGISTRY_BY_VIEW,
+} from './registryData';
 
 // ─── Drag state ────────────────────────────────────────────────────────────
 type DragState =
     | { type: 'move'; key: string; offsetX: number; offsetY: number }
     | { type: 'resize'; key: string; centerX: number; centerY: number };
 
-// ─── Circuit path helpers ──────────────────────────────────────────────────
-
-function buildOrthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
-    const dx = x2 - x1, dy = y2 - y1;
-    if (Math.abs(dx) < 3) return `M ${x1} ${y1} L ${x2} ${y2}`;
-    if (Math.abs(dy) < 3) return `M ${x1} ${y1} L ${x2} ${y2}`;
-    const r = Math.min(18, Math.abs(dx) * 0.35, Math.abs(dy) * 0.35);
-    const sx = Math.sign(dx), sy = Math.sign(dy);
-    if (Math.abs(dx) >= Math.abs(dy)) {
-        return `M ${x1} ${y1} L ${x2 - r * sx} ${y1} Q ${x2} ${y1} ${x2} ${y1 + r * sy} L ${x2} ${y2}`;
-    }
-    return `M ${x1} ${y1} L ${x1} ${y2 - r * sy} Q ${x1} ${y2} ${x1 + r * sx} ${y2} L ${x2} ${y2}`;
-}
-
-function segmentMidpoints(
-    x1: number, y1: number, x2: number, y2: number
-): Array<{ cx: number; cy: number; angle: number }> {
-    if (Math.abs(x2 - x1) >= Math.abs(y2 - y1)) {
-        return [
-            { cx: (x1 + x2) / 2, cy: y1, angle: x2 > x1 ? 0 : 180 },
-            { cx: x2, cy: (y1 + y2) / 2, angle: y2 > y1 ? 90 : 270 },
-        ];
-    }
-    return [
-        { cx: x1, cy: (y1 + y2) / 2, angle: y2 > y1 ? 90 : 270 },
-        { cx: (x1 + x2) / 2, cy: y2, angle: x2 > x1 ? 0 : 180 },
-    ];
-}
-
-function arrowPath(cx: number, cy: number, angleDeg: number): string {
-    const a = (angleDeg * Math.PI) / 180;
-    const tipX = cx + Math.cos(a) * 10, tipY = cy + Math.sin(a) * 10;
-    const b1x = cx - Math.cos(a) * 4 + Math.sin(a) * 6;
-    const b1y = cy - Math.sin(a) * 4 - Math.cos(a) * 6;
-    const b2x = cx - Math.cos(a) * 4 - Math.sin(a) * 6;
-    const b2y = cy - Math.sin(a) * 4 + Math.cos(a) * 6;
-    return `M ${tipX} ${tipY} L ${b1x} ${b1y} L ${b2x} ${b2y} Z`;
-}
-
 // ─── Props ─────────────────────────────────────────────────────────────────
-interface SpatialViewportProps {
+export interface SpatialViewportProps {
     /** Registry keys to highlight. Spotlights those components and darkens the rest. */
     highlightedComponents?: string[];
     /**
@@ -455,7 +204,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
     // ── Neutral pin colours — adapt to rendering surface ──────────────────
     const N_RING  = transparent ? 'rgba(63,63,70,0.75)'  : 'rgba(212,212,216,0.80)';
     const N_FILL  = transparent ? 'rgba(0,0,0,0.08)'     : 'rgba(0,0,0,0.35)';
-    const N_DOT   = transparent ? '#71717a'              : '#d4d4d8';
+    const N_DOT   = transparent ? '#71717a'              : '#d4d8e4';
     const N_BACK  = transparent ? 'rgba(0,0,0,0.12)'     : 'rgba(255,255,255,0.22)';
     const HV_RING = transparent ? 'rgba(0,0,0,0.80)'     : '#ffffff';
     const HV_FILL = transparent ? 'rgba(0,0,0,0.06)'     : 'rgba(255,255,255,0.10)';
@@ -819,69 +568,18 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
             )}
 
             {/* ── Real-time Telemetry HUD ────────────────────────────────────── */}
-            {telemetry && (
-                <div className="absolute bottom-0 inset-x-0 z-10 px-4 py-3 bg-zinc-950/88 backdrop-blur-lg border-t border-zinc-800/70">
-                    <div className="flex items-center gap-1.5 mb-2">
-                        <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
-                        </span>
-                        <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-zinc-500">
-                            Real-time Status
-                        </span>
-                        <span className="ml-auto text-[8px] font-mono text-zinc-700 uppercase tracking-wider">Live</span>
-                    </div>
-                    <div className="flex items-end gap-6">
-                        {telemetry.amperage !== undefined && (
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-[22px] font-mono font-bold text-orange-400 tabular-nums leading-none">
-                                    {telemetry.amperage}
-                                </span>
-                                <span className="text-[10px] font-mono text-zinc-500 pb-px">A</span>
-                            </div>
-                        )}
-                        {telemetry.voltage !== undefined && (
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-[22px] font-mono font-bold text-sky-400 tabular-nums leading-none">
-                                    {telemetry.voltage}
-                                </span>
-                                <span className="text-[10px] font-mono text-zinc-500 pb-px">V</span>
-                            </div>
-                        )}
-                        {telemetry.wfs !== undefined && (
-                            <div className="flex items-baseline gap-1">
-                                <span className="text-[22px] font-mono font-bold text-emerald-400 tabular-nums leading-none">
-                                    {telemetry.wfs}
-                                </span>
-                                <span className="text-[10px] font-mono text-zinc-500 pb-px">m/min</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            {telemetry && <TelemetryHUD telemetry={telemetry} />}
 
             {/* ── Hover tooltip (normal mode only) ───────────────────────────── */}
             {tooltipPoint && (
-                <div style={resolveTooltipStyle(tooltipPoint)}>
-                    <div className="w-[218px] rounded-lg overflow-hidden shadow-[0_0_0_1px_rgba(245,158,11,0.5),0_8px_32px_rgba(0,0,0,0.85)]">
-                        <div className="flex items-center justify-between bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5">
-                            <div className="flex items-center gap-1.5">
-                                <span className={`h-1.5 w-1.5 rounded-full ${isLockedTooltip ? 'bg-amber-400 animate-pulse' : 'bg-zinc-500'}`} />
-                                <span className="text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-amber-400">
-                                    {isLockedTooltip ? 'Locked' : 'Hover'}
-                                </span>
-                            </div>
-                            <span className="text-[9px] font-mono text-zinc-500 tabular-nums">
-                                {tooltipPoint.x} · {tooltipPoint.y}
-                            </span>
-                        </div>
-                        <div className="bg-zinc-950/98 px-3 py-2.5 backdrop-blur-xl">
-                            <p className="text-[12.5px] font-semibold text-zinc-50 leading-tight">{tooltipPoint.title}</p>
-                            <p className="text-[11px] text-zinc-400 leading-relaxed mt-1.5">{tooltipPoint.desc}</p>
-                        </div>
-                    </div>
-                </div>
+                <HoverTooltip
+                    tooltipPoint={tooltipPoint}
+                    isLockedTooltip={isLockedTooltip}
+                    style={resolveTooltipStyle(tooltipPoint)}
+                />
             )}
         </div>
     );
 };
+
+export default SpatialViewport;

@@ -88,7 +88,7 @@ export function GlobalMachineViewer() {
     const [highlightedTargets, setHighlightedTargets] = useState<string[]>([]);
     const [drawPath,           setDrawPath]           = useState(false);
     const [navFlash,           setNavFlash]           = useState(false);
-    const [registries,         setRegistries]         = useState(() => ({
+    const [registries,         setRegistries]         = useState<Record<MachineView, Record<string, SpatialControlPoint>>>(() => ({
         front:    { ...REGISTRY_BY_VIEW.front },
         interior: { ...REGISTRY_BY_VIEW.interior },
         back:     { ...REGISTRY_BY_VIEW.back },
