@@ -76,10 +76,19 @@ function MetricCard({ label, value, accentVar }: { label: string; value: React.R
     );
 }
 
-export function PolarityConfigurator() {
+function resolveProcessKey(raw: string | undefined): ProcessKey {
+    if (!raw) return 'MIG';
+    const match = PROCESS_PILLS.find(p => p.label === raw || p.key === raw);
+    return match ? match.key : 'MIG';
+}
+
+export function PolarityConfigurator({ initialProcess }: { initialProcess?: string }) {
     const { sessionState, setSessionState } = useWorkbench();
     const [specs, setSpecs] = useState<SpecsData | null>(null);
-    const [selectedProcess, setSelectedProcess] = useState<ProcessKey>('MIG');
+    // Seed from explicit prop first; fall back to session state via effect below
+    const [selectedProcess, setSelectedProcess] = useState<ProcessKey>(
+        () => resolveProcessKey(initialProcess),
+    );
 
     // Fetch specs
     useEffect(() => {
@@ -89,18 +98,15 @@ export function PolarityConfigurator() {
             .catch(() => {});
     }, []);
 
-    // Pre-select process from sessionState on mount
+    // When no explicit prop, sync from sessionState on first render
     const initDone = useRef(false);
     useEffect(() => {
-        if (initDone.current) return;
+        if (initDone.current || initialProcess) return;
         initDone.current = true;
         if (sessionState.process) {
-            const match = PROCESS_PILLS.find(
-                p => p.label === sessionState.process || p.key === sessionState.process,
-            );
-            if (match) setSelectedProcess(match.key);
+            setSelectedProcess(resolveProcessKey(sessionState.process));
         }
-    }, [sessionState.process]);
+    }, [initialProcess, sessionState.process]);
 
     // Write process label back to sessionState
     useEffect(() => {
@@ -206,7 +212,7 @@ export function PolarityConfigurator() {
                             {selectedProcess === 'TIG' && (
                                 <MetricCard 
                                     label="Foot Pedal" 
-                                    value={(polarityEntry as any).foot_pedal_socket ?? '—'} 
+                                    value={(polarityEntry as any)?.foot_pedal_socket ?? '—'}
                                 />
                             )}
                         </div>
