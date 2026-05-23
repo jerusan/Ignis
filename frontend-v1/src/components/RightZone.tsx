@@ -4,7 +4,7 @@
 //
 import React from 'react';
 import { useWorkbench } from './WorkbenchOverlay';
-import type { DebugTurn } from './DebugPanel';
+import type { DebugTurn } from '../types/chat';
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
     return (

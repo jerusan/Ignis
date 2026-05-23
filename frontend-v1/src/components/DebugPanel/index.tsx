@@ -8,15 +8,9 @@ import {
   WrenchIcon,
   ActivityIcon } from
 'lucide-react';
-export interface DebugTurn {
-  id: string;
-  label?: string;
-  latencyMs: number;
-  inputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  toolsCalled: string[];
-}
+import type { DebugTurn } from '../../types/chat';
+
+export type { DebugTurn };
 export interface DebugPanelProps {
   turns: DebugTurn[];
   defaultOpen?: boolean;

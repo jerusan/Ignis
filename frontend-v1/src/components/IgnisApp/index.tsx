@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ZapIcon, GaugeIcon, AlertCircleIcon, SlidersHorizontalIcon } from 'lucide-react';
-import ChatPane, {
-  ChatMessage,
-  ChatToolCall
-} from '../ChatPane';
+import ChatPane from '../ChatPane';
 import WizardModeView, {
   WizardStep,
   parseTextWizardSteps,
 } from '../WizardModeView';
 import { parseArtifacts, parseSpatialContext, WORKBENCH_ARTIFACT_TYPES } from '../../lib/artifacts';
-import { ApiMessage, streamChat } from '../../lib/chatApi';
+import { streamChat } from '../../lib/chatApi';
+import type { ChatMessage, ChatToolCall, ApiMessage } from '../../types/chat';
 import { useWorkbench } from '../WorkbenchOverlay';
 
 const INPUT_COST_PER_TOKEN = 3 / 1_000_000;

@@ -13,16 +13,16 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import type { SpatialContextTag } from '../lib/artifacts';
-import type { SessionState } from '../lib/chatApi';
-import type { ChatArtifact } from './ChatPane';
-import type { DebugTurn } from './DebugPanel';
-import {
+import type {
+    SpatialContextTag,
+    SessionState,
+    ChatArtifact,
+    DebugTurn,
     MachineView,
-    REGISTRY_BY_VIEW,
     SpatialControlPoint,
     WelderTelemetry,
-} from './SpatialViewport';
+} from '../types/chat';
+import { REGISTRY_BY_VIEW } from './SpatialViewport';
 
 // ── Re-export so consumers can import from one place ──────────────────────────
 export type { WelderTelemetry };
@@ -76,7 +76,7 @@ interface WorkbenchCtx {
     addPinnedArtifact:    (a: ChatArtifact) => void;
     removePinnedArtifact: (id: string) => void;
     sessionState:         SessionState;
-    setSessionState:      (s: SessionState) => void;
+    setSessionState:      React.Dispatch<React.SetStateAction<SessionState>>;
     turns:                DebugTurn[];
     addTurn:              (t: DebugTurn) => void;
     /** Send a user message into the chat stream (registered by IgnisApp). */

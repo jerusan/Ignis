@@ -1,21 +1,24 @@
-import type { ArtifactType } from '../components/ArtifactRenderer';
-import type { ChatArtifact } from '../components/ChatPane';
-import type { MachineView } from '../components/SpatialViewport';
+import type {
+  ArtifactType,
+  ChatArtifact,
+  MachineView,
+  ChecklistStep,
+  PendingArtifact,
+  SpatialContextTag,
+  HighlightBounds,
+  ReferenceImage,
+} from '../types/chat';
 
-// Re-export so consumers can reference it without importing ArtifactRenderer
-export type { ArtifactType };
-
-// ── Checklist step schema (emitted by the agent in checklist artifacts) ────────
-export interface ChecklistStep {
-  id: string;
-  text: string;
-  detail?: string;
-  spatial?: {
-    view: MachineView;
-    highlights: string[];
-    draw_path?: boolean;
-  };
-}
+export type {
+  ArtifactType,
+  ChatArtifact,
+  MachineView,
+  ChecklistStep,
+  PendingArtifact,
+  SpatialContextTag,
+  HighlightBounds,
+  ReferenceImage,
+};
 
 // Matches <artifact ...>...</artifact> regardless of attribute order.
 const ARTIFACT_PATTERN = /<artifact\b([^>]*)>([\s\S]*?)<\/artifact>/g;
@@ -63,10 +66,7 @@ export function stripArtifacts(text: string): string {
 
 // ── Streaming tag suppression ──────────────────────────────────────────────────
 
-export interface PendingArtifact {
-  type?: string;
-  title?: string;
-}
+
 
 /**
  * During streaming, the model may emit an opening <artifact> or <spatial> tag
@@ -112,16 +112,7 @@ export function stripStreamingTags(text: string): {
 
 // ── Spatial context ────────────────────────────────────────────────────────────
 
-export interface SpatialContextTag {
-  view: MachineView;
-  /** One or more registry keys to highlight, e.g. ["positive_socket", "negative_socket"] */
-  highlights: string[];
-  /**
-   * When true the viewport draws an animated circuit path connecting highlighted
-   * components in order. Use for polarity / wiring / connection explanations.
-   */
-  draw_path?: boolean;
-}
+
 
 // Matches: <spatial view="front" highlights="a,b" draw_path="true" />
 //      or: <spatial view="front" highlights="a" />
@@ -151,19 +142,7 @@ export function stripSpatialContext(text: string): string {
 // ── Reference image extraction ─────────────────────────────────────────────────
 
 /** Normalized-coordinate highlight box encoded in alt text as [x,y,w,h] or [x,y,w,h,Label]. */
-export interface HighlightBounds {
-  x: number;      // 0–100 percentage of rendered image width
-  y: number;      // 0–100 percentage of rendered image height
-  width: number;
-  height: number;
-  label?: string;
-}
 
-export interface ReferenceImage {
-  alt: string;
-  url: string;
-  bounds?: HighlightBounds;
-}
 
 const BOUNDS_RE = /\[(\d+(?:\.\d+)?),(\d+(?:\.\d+)?),(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)(?:,([^\]]+))?\]/;
 

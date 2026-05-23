@@ -1,5 +1,5 @@
 import { SpatialViewport, REGISTRY_BY_VIEW } from './SpatialViewport';
-import type { MachineView } from './SpatialViewport';
+import type { MachineView } from '../types/chat';
 
 // ── Shared step shape used by both checklist and text-based wizard ──────────
 

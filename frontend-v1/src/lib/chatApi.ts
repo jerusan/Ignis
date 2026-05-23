@@ -1,42 +1,16 @@
-export interface ApiMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import type {
+  ApiMessage,
+  SessionState,
+  ChatStreamEvent,
+  ChatRequest,
+} from '../types/chat';
 
-export interface SessionState {
-  process: string | null;
-  voltage: string | null;
-  material: string | null;
-  thickness: string | null;
-  wire_size: string | null;
-}
-
-export type ChatStreamEvent =
-  | {
-      type: 'text_delta';
-      text: string;
-    }
-  | {
-      type: 'tool_use';
-      name: string;
-      input: Record<string, unknown>;
-    }
-  | {
-      type: 'tool_result';
-      tool: string;
-      content: unknown;
-    }
-  | {
-      type: 'done';
-      input_tokens: number;
-      output_tokens: number;
-      session_context?: SessionState;
-    };
-
-export interface ChatRequest {
-  messages: ApiMessage[];
-  sessionId: string;
-}
+export type {
+  ApiMessage,
+  SessionState,
+  ChatStreamEvent,
+  ChatRequest,
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

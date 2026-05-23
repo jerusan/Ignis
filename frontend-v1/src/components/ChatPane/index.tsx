@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { SendIcon, WifiOffIcon, BookOpenIcon, ChevronDownIcon, WrenchIcon } from 'lucide-react';
+import { SendIcon, BookOpenIcon, ChevronDownIcon, WrenchIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Message from '../Message';
-import ToolCallChip, { ToolName, ToolStatus } from '../ToolCallChip';
-import ArtifactRenderer, { ArtifactType } from '../ArtifactRenderer';
-import VoiceButton, { VoiceState } from '../VoiceButton';
+import ToolCallChip from '../ToolCallChip';
+import ArtifactRenderer from '../ArtifactRenderer';
+import VoiceButton from '../VoiceButton';
 import { InlineMachineVisual } from '../InlineMachineVisual';
 import { ChatStepStepper } from '../ChatStepStepper';
 import { AnnotatedImage } from '../AnnotatedImage';
@@ -17,49 +17,22 @@ import {
   parseReferenceImages,
   stripReferenceImages,
   WORKBENCH_ARTIFACT_TYPES,
-  type ReferenceImage,
-  type SpatialContextTag,
-  type PendingArtifact,
 } from '../../lib/artifacts';
+import type {
+  ChatArtifact,
+  ChatToolCall,
+  ChatMessage,
+  ChatPaneProps,
+  ReferenceImage,
+  PendingArtifact,
+} from '../../types/chat';
 
-export interface ChatArtifact {
-  id: string;
-  type: ArtifactType;
-  title: string;
-  code: string;
-  mode?: 'replace';
-  source_pages?: string;
-  widgetName?: string;
-}
-export interface ChatToolCall {
-  id: string;
-  tool: ToolName;
-  status: ToolStatus;
-  input?: Record<string, unknown>;
-  result?: string;
-}
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-  streaming?: boolean;
-  toolCalls?: ChatToolCall[];
-  artifacts?: ChatArtifact[];
-  timestamp?: string;
-  spatialContext?: SpatialContextTag;
-}
-export interface ChatPaneProps {
-  messages: ChatMessage[];
-  onSend?: (text: string) => void;
-  voiceState?: VoiceState;
-  onVoiceToggle?: () => void;
-  offline?: boolean;
-  placeholder?: string;
-  disabled?: boolean;
-  emptyState?: React.ReactNode;
-  onWorkbenchToggle?: () => void;
-  workbenchOpen?: boolean;
-}
+export type {
+  ChatArtifact,
+  ChatToolCall,
+  ChatMessage,
+  ChatPaneProps,
+};
 
 function ReferenceImages({ images }: { images: ReferenceImage[] }) {
   const [expanded, setExpanded] = useState(false);

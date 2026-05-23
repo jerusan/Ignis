@@ -9,7 +9,10 @@ import {
 'lucide-react';
 import { useWorkbench } from '../WorkbenchOverlay';
 import { WIDGET_REGISTRY } from '../widgets';
-export type ArtifactType = 'react' | 'svg' | 'html' | 'checklist' | 'mermaid' | 'markdown' | 'widget';
+import type { ArtifactType } from '../../types/chat';
+
+export type { ArtifactType };
+
 export interface ArtifactRendererProps {
   id?: string;
   type: ArtifactType;

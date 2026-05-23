@@ -1,5 +1,6 @@
 import React, { useState, createElement, Component } from 'react';
-import ChatPane, { ChatMessage } from './index';
+import ChatPane from './index';
+import type { ChatMessage } from '../../types/chat';
 import type { ComponentPreviewModule } from '../previewTypes';
 const polaritySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160" width="320" height="160">
   <rect x="20" y="30" width="120" height="100" rx="8" fill="#e0e7ff" stroke="#3b3a8c" stroke-width="2"/>

@@ -3,9 +3,8 @@ import { WrenchIcon } from 'lucide-react';
 import {
     SpatialViewport,
     REGISTRY_BY_VIEW,
-    SpatialControlPoint,
 } from '../SpatialViewport';
-import type { MachineView } from '../SpatialViewport';
+import type { MachineView, SpatialControlPoint, SpatialContextTag } from '../../types/chat';
 import { useWorkbench, fmtRegistry, MiniExportPanel } from '../WorkbenchOverlay';
 import ChecklistRenderer from '../ChecklistRenderer';
 import ArtifactRenderer from '../ArtifactRenderer';

@@ -1,22 +1,17 @@
 // frontend/src/components/SpatialViewport.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-export interface SpatialControlPoint {
-    x: number;      // Normalized 0–1000 coordinate space
-    y: number;
-    radius: number;
-    title: string;
-    desc: string;
-}
+import type {
+  SpatialControlPoint,
+  WelderTelemetry,
+  MachineView,
+} from '../types/chat';
 
-/** Live readings injected by the WorkbenchOverlay (all fields optional). */
-export interface WelderTelemetry {
-    amperage?: number;   // A
-    voltage?: number;   // V
-    wfs?: number;   // wire feed speed m/min
-}
-
-export type MachineView = 'front' | 'interior' | 'back';
+export type {
+  SpatialControlPoint,
+  WelderTelemetry,
+  MachineView,
+};
 
 export const WELDER_FRONT_REGISTRY: Record<string, SpatialControlPoint> = {
     "home_button": {

@@ -3,8 +3,8 @@
 // Permanent left panel: machine view switcher + SpatialViewport + pinned artifacts.
 //
 import { useState, useEffect, useCallback } from 'react';
-import { SpatialViewport, REGISTRY_BY_VIEW, SpatialControlPoint } from './SpatialViewport';
-import type { MachineView } from './SpatialViewport';
+import { SpatialViewport, REGISTRY_BY_VIEW } from './SpatialViewport';
+import type { MachineView, SpatialControlPoint } from '../types/chat';
 import ArtifactRenderer from './ArtifactRenderer';
 import ChecklistRenderer from './ChecklistRenderer';
 import { useWorkbench, MiniExportPanel, fmtRegistry } from './WorkbenchOverlay';
