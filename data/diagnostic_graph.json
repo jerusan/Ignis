@@ -266,7 +266,7 @@
           "image_trigger": "interior_controls_p9"
         }
       },
-      "quick_tips": "Top causes: (1) Drive roll tension wrong \u2014 2-3 for flux-cored, 3-5 for solid wire; (2) Liner kinked or worn; (3) Contact tip clogged with spatter; (4) Wire spool tangled or spool brake too tight; (5) Drive motor fault.",
+      "quick_tips": "Two possible root causes depending on symptom \u2014 If motor NOT spinning: (1) MIG gun Eurofitting not plugged into front panel socket; (2) No relay click when trigger pressed \u2014 trigger switch may be faulty; (3) Drive motor fault. If motor IS spinning but wire doesn\u2019t feed: (4) Drive roll tension wrong \u2014 2-3 for flux-cored, 3-5 for solid wire; (5) Liner kinked or worn; (6) Contact tip clogged with spatter.",
       "quick_tips_images": [
         "interior_controls_p9"
       ]
@@ -421,7 +421,7 @@
           "image_trigger": "wire_penetration_p36"
         }
       },
-      "quick_tips": "Top fixes: (1) Increase travel speed \u2014 keep moving, no pauses or wide weave; (2) Reduce wire speed (amperage) 15-20% and drop voltage one step; (3) Use thinnest wire available \u2014 0.025 inch for very thin material; (4) Ensure tight fit-up with no gaps; (5) Tack weld every 2-3 inches to distribute heat.",
+      "quick_tips": "Top fixes: (1) Increase travel speed \u2014 keep moving, no pauses or wide weave; (2) Reduce wire speed (amperage) 15-20% and drop voltage one step; (3) Use thinnest wire available \u2014 0.023 inch for very thin material; (4) Ensure tight fit-up with no gaps; (5) Tack weld every 2-3 inches to distribute heat.",
       "quick_tips_images": [
         "wire_weld_diagnosis_p35"
       ]

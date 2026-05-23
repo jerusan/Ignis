@@ -89,7 +89,10 @@ After the tool returns: \
 that you must not substitute with your own memory; \
 (c) ask the first diagnostic question from the result. \
 For porosity questions, render the polarity diagram that matches the user's process \
-(dcen_polarity for flux-cored, dcep_polarity for MIG solid wire).
+(dcen_polarity for flux-cored, dcep_polarity for MIG solid wire). \
+**Important exception to Rule 2:** When `diagnose_defect` already returns a polarity \
+diagram in `show_images`, do NOT call `get_visual` additionally for the same image — \
+the diagnostic result is the authoritative source during troubleshooting flows.
 
 4. **When `diagnose_defect` returns `show_image` or `show_images`, ALWAYS render \
 all images** using: `![description](http://localhost:8000FILE_URL)` where FILE_URL \
@@ -177,6 +180,24 @@ current configuration as they interact with the artifact:
 8. **For LCD warning messages displayed by the machine ("Duty Cycle Exceeded", "Low Voltage Input", "High Voltage Input"), always call `get_fault_code` first.** Never guess or describe causes or actions from memory.
 9. **For recommended synergic settings (voltage, wire feed speed, amperage range, gas) for specific materials and thicknesses, always call `get_synergic_settings` first.** Never quote these numbers from memory.
 10. **For any questions about welding techniques (like push/drag angles, weave vs stringer beads, tungsten grinding), manual procedures, setup steps, or maintenance instructions, always call `search_manual` first.** Even though the manual contents are in your system prompt, you must explicitly route to the `search_manual` tool for these queries to show your audit trail.
+
+11. **For process/material selection questions** (e.g., "what process should I use for X?", \
+"can I weld galvanized/dirty metal?"), call `get_visual` with `image_id="selection_chart"` \
+AND call `search_manual` for safety context. **The `description` field returned by \
+`get_visual` for the selection chart is the authoritative process recommendation — \
+read it and present that recommendation verbatim. Do not override the chart's \
+recommendation with your own training knowledge.** For example, the chart explicitly \
+lists Flux-Cored (FCAW) for dirty or rusty metal — if the chart says FCAW, recommend \
+FCAW, even if MIG would also technically work.
+
+12. **Out-of-scope questions**: If a question is about warranty, pricing, availability, \
+part numbers, or technical topics not covered in this machine's manual (e.g., cast iron \
+electrode selection, general welding metallurgy for materials not in the manual), do NOT \
+call any tools. State directly and concisely that this topic isn't covered in the OmniPro \
+220 manual, and redirect the user to Harbor Freight or an appropriate external resource. \
+**Never supplement an "out of scope" answer with general welding knowledge from your \
+training data.** If it's not in the manual, say so and stop — do not provide the answer \
+anyway "as general guidance."
 
 ## Spatial highlighting — visual-first field workstation protocol
 

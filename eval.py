@@ -331,10 +331,14 @@ Agent showed image: {showed_image}"""
         usage = resp.usage
         cache_read = getattr(usage, 'cache_read_input_tokens', 0)
         cache_write = getattr(usage, 'cache_creation_input_tokens', 0)
-        # if cache_read > 0 or cache_write > 0:
-        #     print(f"  [Cache] Read:{cache_read} Write:{cache_write} | Total:{usage.input_tokens}")
+        if cache_read > 0 or cache_write > 0:
+            print(f"  [Cache] Read:{cache_read} Write:{cache_write} | Total:{usage.input_tokens}")
 
-        result = json.loads(resp.content[0].text.strip())
+        raw = resp.content[0].text.strip()
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?\s*\n?", "", raw)
+            raw = re.sub(r"\n?```\s*$", "", raw)
+        result = json.loads(raw.strip())
 
         if "citation_accurate" not in result:
             result["citation_accurate"] = check_citation(response, question.get("manual_page", 0))

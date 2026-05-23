@@ -727,7 +727,7 @@
         "material": "mild_steel"
       }
     },
-    "ground_truth": "The OmniPro 220 has a synergic mode. Select MIG process, 0.030\" wire diameter, and material thickness (around 24 ga to 1/8\" range for 14 ga). The machine will suggest baseline voltage and wire feed speed. Fine-tune while welding. Refer to the Settings Chart on the inside of the welder door for gas type.",
+    "ground_truth": "Synergic baseline for MIG, 14 ga mild steel, 0.030\" wire: 18.5 V, 175 IPM (100–115 A). Gas: C25 @ 20–30 SCFH, CTWD 3/8\". Select these inputs on the machine's synergic screen and fine-tune on scrap.",
     "key_numbers": [],
     "expected_image_ids": [
       "front_panel_p8",
@@ -749,7 +749,7 @@
         "material": "stainless"
       }
     },
-    "ground_truth": "Use synergic MIG mode. Select 0.030\" wire and appropriate stainless thickness. Use Tri-Mix gas. The machine provides suggested voltage and WFS. Adjust as needed based on weld appearance.",
+    "ground_truth": "Synergic baseline for MIG, 16 ga stainless, 0.030\" wire: 17.5 V, 130 IPM (75–90 A). Gas: Tri-mix @ 20–30 SCFH. Fine-tune based on weld appearance.",
     "key_numbers": [],
     "expected_image_ids": [
       "settings_screen_p20"
@@ -770,7 +770,7 @@
         "material": "aluminum"
       }
     },
-    "ground_truth": "Aluminum requires an optional spool gun. Use 100% Argon gas. Select synergic MIG mode with 0.030\" aluminum wire and material thickness. The machine suggests baseline settings that should be fine-tuned.",
+    "ground_truth": "Spool gun required for aluminum. Synergic baseline for MIG, 1/8\" aluminum, 0.030\" wire: 18.0 V, 285 IPM (95–115 A). Gas: 100% Argon @ 20–30 SCFH. ER4043 wire recommended. Fine-tune after first test bead.",
     "key_numbers": [],
     "accuracy_method": "llm_judge",
     "expected_artifact": null
@@ -788,7 +788,7 @@
         "material": "mild_steel"
       }
     },
-    "ground_truth": "Use Flux-Cored (gasless) mode. Select 0.030\" flux-cored wire and material thickness. The welder provides synergic recommendations for voltage and wire feed speed. Use DCEN polarity.",
+    "ground_truth": "Synergic baseline for flux-cored, 16 ga mild steel, 0.030\" wire: 17.5 V, 125 IPM (75–90 A). DCEN polarity — ground to + socket, wire to − socket. No gas (self-shielded E71T-GS wire).",
     "key_numbers": [],
     "accuracy_method": "llm_judge",
     "expected_artifact": null
@@ -806,7 +806,7 @@
         "material": "mild_steel"
       }
     },
-    "ground_truth": "In synergic MIG mode, select 0.035\" solid wire and material thickness near 3/16\". The machine suggests starting voltage and WFS. Use C25 gas and DCEP polarity. Fine-tune while testing on scrap.",
+    "ground_truth": "Synergic baseline for MIG, 3/16\" mild steel, 0.035\" wire: 19.5 V, 175 IPM (130–150 A). Gas: C25 @ 20–30 SCFH, CTWD 1/2\". DCEP polarity. Fine-tune on scrap first — 240V recommended at this thickness.",
     "key_numbers": [],
     "expected_image_ids": [
       "settings_screen_p20"
