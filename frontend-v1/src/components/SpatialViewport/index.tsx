@@ -57,6 +57,8 @@ export interface SpatialViewportProps {
      * on the parent surface. Use inside the chat pane (light bg).
      */
     transparent?: boolean;
+    /** Current zoom level of the parent container to scale down tooltips. */
+    zoom?: number;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
     telemetry,
     currentView = 'front',
     transparent = false,
+    zoom = 1,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [hoveredKey, setHoveredKey] = useState<string | null>(null);
@@ -212,7 +215,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
 
     // ── Container class ────────────────────────────────────────────────────
     const containerCls = transparent
-        ? `relative w-full overflow-hidden select-none transition-all duration-200${isModifyMode ? ' ring-2 ring-orange-500/20' : ''}`
+        ? `relative w-full select-none transition-all duration-200${isModifyMode ? ' ring-2 ring-orange-500/20' : ''}`
         : [
             'relative w-full border rounded-xl overflow-hidden select-none transition-all duration-200',
             isOverlay ? 'bg-zinc-950' : 'bg-zinc-950 shadow-2xl',
@@ -576,6 +579,7 @@ export const SpatialViewport: React.FC<SpatialViewportProps> = ({
                     tooltipPoint={tooltipPoint}
                     isLockedTooltip={isLockedTooltip}
                     style={resolveTooltipStyle(tooltipPoint)}
+                    zoom={zoom}
                 />
             )}
         </div>

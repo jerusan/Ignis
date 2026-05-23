@@ -108,6 +108,8 @@ export function GlobalMachineViewer() {
     const fitZoomRef   = useRef(1);
     const isFirstLayout = useRef(true);
     const lastFlownContextRef = useRef<SpatialContextTag | null>(null);
+    const lastFlownWidthRef = useRef<number>(0);
+    const lastFlownHeightRef = useRef<number>(0);
     const [fitZoom,    setFitZoom] = useState(1);
 
     // Dims for mini-map
@@ -361,6 +363,8 @@ export function GlobalMachineViewer() {
             setDrawPath(false);
             resetView();
             lastFlownContextRef.current = null;
+            lastFlownWidthRef.current = 0;
+            lastFlownHeightRef.current = 0;
             return;
         }
         setHighlightedTargets(spatialContext.highlights);
@@ -373,8 +377,12 @@ export function GlobalMachineViewer() {
         if (vp && content && content.offsetHeight >= 10) {
             flyTo(spatialContext.highlights, registries[spatialContext.view]);
             lastFlownContextRef.current = spatialContext;
+            lastFlownWidthRef.current = vp.clientWidth;
+            lastFlownHeightRef.current = vp.clientHeight;
         } else {
             lastFlownContextRef.current = null;
+            lastFlownWidthRef.current = 0;
+            lastFlownHeightRef.current = 0;
         }
 
         return () => clearTimeout(t);
@@ -382,9 +390,15 @@ export function GlobalMachineViewer() {
 
     // Ensure we fly to the active spatial context once elements are laid out / have sizes
     useEffect(() => {
-        if (spatialContext && lastFlownContextRef.current !== spatialContext && contentH >= 10 && viewportDims.w > 0) {
-            flyTo(spatialContext.highlights, registries[spatialContext.view]);
-            lastFlownContextRef.current = spatialContext;
+        if (spatialContext && contentH >= 10 && viewportDims.w > 0) {
+            const hasResized = Math.abs(lastFlownWidthRef.current - viewportDims.w) > 5 ||
+                               Math.abs(lastFlownHeightRef.current - viewportDims.h) > 5;
+            if (lastFlownContextRef.current !== spatialContext || hasResized) {
+                flyTo(spatialContext.highlights, registries[spatialContext.view]);
+                lastFlownContextRef.current = spatialContext;
+                lastFlownWidthRef.current = viewportDims.w;
+                lastFlownHeightRef.current = viewportDims.h;
+            }
         }
     }, [spatialContext, contentH, viewportDims, flyTo, registries]);
 
@@ -651,6 +665,7 @@ export function GlobalMachineViewer() {
                             onAnnotationClick={handleAnnotationClick}
                             onSave={handleSave}
                             onDiscard={handleDiscard}
+                            zoom={zoom}
                         />
                     </div>
 

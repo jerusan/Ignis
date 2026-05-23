@@ -5,15 +5,36 @@ interface HoverTooltipProps {
     tooltipPoint: SpatialControlPoint;
     isLockedTooltip: boolean;
     style: React.CSSProperties;
+    zoom?: number;
 }
 
 export const HoverTooltip: React.FC<HoverTooltipProps> = ({
     tooltipPoint,
     isLockedTooltip,
     style,
+    zoom = 1,
 }) => {
+    const xPct = tooltipPoint.x / 10;
+    const yPct = tooltipPoint.y / 10;
+    const above = yPct > 45;
+    const isLeft = xPct < 28;
+    const isRight = xPct > 72;
+
+    const originY = above ? 'bottom' : 'top';
+    const originX = isLeft ? 'left' : isRight ? 'right' : 'center';
+    const transformOrigin = `${originY} ${originX}`;
+
+    const baseTransform = isLeft || isRight ? '' : 'translateX(-50%)';
+    const transform = zoom > 1 ? `${baseTransform} scale(${1 / zoom})`.trim() : undefined;
+
+    const tooltipStyle: React.CSSProperties = {
+        ...style,
+        ...(transform ? { transform } : {}),
+        ...(transform ? { transformOrigin } : {}),
+    };
+
     return (
-        <div style={style}>
+        <div style={tooltipStyle}>
             <div className="w-[218px] rounded-lg overflow-hidden shadow-[0_0_0_1px_rgba(245,158,11,0.5),0_8px_32px_rgba(0,0,0,0.85)]">
                 <div className="flex items-center justify-between bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5">
                     <div className="flex items-center gap-1.5">

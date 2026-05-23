@@ -9,15 +9,7 @@ import VoiceButton from '../VoiceButton';
 import { InlineMachineVisual } from '../InlineMachineVisual';
 import { ChatStepStepper } from '../ChatStepStepper';
 import { AnnotatedImage } from '../AnnotatedImage';
-import {
-  parseArtifacts,
-  stripArtifacts,
-  stripSpatialContext,
-  stripStreamingTags,
-  parseReferenceImages,
-  stripReferenceImages,
-  WORKBENCH_ARTIFACT_TYPES,
-} from '../../lib/artifacts';
+import { WORKBENCH_ARTIFACT_TYPES } from '../../lib/artifacts';
 import type {
   ChatArtifact,
   ChatToolCall,
@@ -100,10 +92,22 @@ function ChatPane({
 }: ChatPaneProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevLengthRef = useRef(messages.length);
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+
+    const prevLength = prevLengthRef.current;
+    prevLengthRef.current = messages.length;
+
+    if (prevLength === 0) {
+      el.scrollTop = el.scrollHeight;
+    } else if (messages.length > prevLength) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    } else if (messages.some(m => m.streaming)) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
   const handleSubmit = useCallback(
@@ -175,34 +179,10 @@ function ChatPane({
           </div>
         ) : (
           messages.map((m, msgIdx) => {
-            // During streaming, strip any partial/incomplete special tags and
-            // capture metadata so we can show a building animation in their place.
-            const streamText =
-              m.streaming && m.role === 'assistant'
-                ? stripStreamingTags(m.text)
-                : null;
-            const pendingArtifact = streamText?.pending ?? null;
-            const textForParsing = streamText?.clean ?? m.text;
-
-            const parsedArtifacts =
-              m.role === 'assistant' ? parseArtifacts(textForParsing) : [];
-            const artifacts =
-              m.artifacts && m.artifacts.length > 0
-                ? m.artifacts
-                : parsedArtifacts;
-
-            const baseText =
-              m.role === 'assistant'
-                ? stripSpatialContext(stripArtifacts(textForParsing))
-                : m.text;
-            const referenceImages =
-              m.role === 'assistant'
-                ? parseReferenceImages(baseText)
-                : [];
-            const displayText =
-              referenceImages.length > 0
-                ? stripReferenceImages(baseText)
-                : baseText;
+            const pendingArtifact = m.pendingArtifact ?? null;
+            const artifacts = m.artifacts ?? [];
+            const referenceImages = m.referenceImages ?? [];
+            const displayText = m.displayText ?? m.text;
 
             // Determine step label for this spatial message (e.g. "Step 2 of 4")
             const isCurrentStep = msgIdx === lastSpatialIdx;
@@ -217,16 +197,16 @@ function ChatPane({
                 : undefined;
 
             return (
-              <div key={m.id} className="space-y-2">
+              <div key={m.id} className="space-y-2 animate-fade-in">
                 <Message
                   role={m.role}
-                  streaming={m.streaming}
+                  streaming={m.streaming && !displayText}
                   timestamp={m.timestamp}
                 >
                   {m.role === 'assistant' ? (
                     <div className="space-y-2">
                       {displayText ? (
-                        <div className="prose-ignis">
+                        <div className={`prose-ignis ${m.streaming ? 'is-streaming' : ''}`}>
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
                             {displayText}
                           </ReactMarkdown>

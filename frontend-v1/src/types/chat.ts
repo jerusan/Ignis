@@ -99,6 +99,9 @@ export interface ChatMessage {
   artifacts?: ChatArtifact[];
   timestamp?: string;
   spatialContext?: SpatialContextTag | null;
+  displayText?: string;
+  referenceImages?: ReferenceImage[];
+  pendingArtifact?: PendingArtifact | null;
 }
 
 export interface ChatPaneProps {

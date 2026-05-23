@@ -5,7 +5,16 @@ import WizardModeView, {
   WizardStep,
   parseTextWizardSteps,
 } from '../WizardModeView';
-import { parseArtifacts, parseSpatialContext, WORKBENCH_ARTIFACT_TYPES } from '../../lib/artifacts';
+import {
+  parseArtifacts,
+  parseSpatialContext,
+  WORKBENCH_ARTIFACT_TYPES,
+  stripStreamingTags,
+  stripSpatialContext,
+  stripArtifacts,
+  parseReferenceImages,
+  stripReferenceImages,
+} from '../../lib/artifacts';
 import { streamChat } from '../../lib/chatApi';
 import type { ChatMessage, ChatToolCall, ApiMessage } from '../../types/chat';
 import { useWorkbench } from '../WorkbenchOverlay';
@@ -247,11 +256,24 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
             // Do NOT apply spatial context mid-stream — defer to the finally block
             // so we can suppress it when a widget artifact is present in the same response.
             setMessages((current) =>
-              updateAssistant(current, assistantId, (message) => ({
-                ...message,
-                text: finalText,
-                artifacts: parseArtifacts(finalText),
-              }))
+              updateAssistant(current, assistantId, (message) => {
+                const streamText = stripStreamingTags(finalText);
+                const pendingArtifact = streamText.pending;
+                const textForParsing = streamText.clean;
+                const finalArtifacts = parseArtifacts(textForParsing);
+                const baseText = stripSpatialContext(stripArtifacts(textForParsing));
+                const referenceImages = parseReferenceImages(baseText);
+                const displayText = referenceImages.length > 0 ? stripReferenceImages(baseText) : baseText;
+
+                return {
+                  ...message,
+                  text: finalText,
+                  artifacts: finalArtifacts,
+                  displayText,
+                  referenceImages,
+                  pendingArtifact,
+                };
+              })
             );
           }
 
@@ -319,12 +341,19 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
           if (spatial) setSpatialContext(spatial);
         }
 
+        const baseText = stripSpatialContext(stripArtifacts(finalText));
+        const referenceImages = parseReferenceImages(baseText);
+        const displayText = referenceImages.length > 0 ? stripReferenceImages(baseText) : baseText;
+
         setMessages((current) =>
           updateAssistant(current, assistantId, (message) => ({
             ...message,
             streaming: false,
             artifacts: finalArtifacts,
             spatialContext: hasWidget ? null : (parseSpatialContext(finalText) ?? message.spatialContext),
+            displayText,
+            referenceImages,
+            pendingArtifact: null,
           }))
         );
         const checklist = finalArtifacts.find((a) => a.type === 'checklist');
