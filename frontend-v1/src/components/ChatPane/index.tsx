@@ -65,20 +65,20 @@ function ReferenceImages({ images }: { images: ReferenceImage[] }) {
   const [expanded, setExpanded] = useState(false);
   if (images.length === 0) return null;
   return (
-    <div className="pl-11 mt-1">
+    <div className="mt-2 pt-2 border-t border-white/[0.04]">
       <button
         onClick={() => setExpanded(v => !v)}
-        className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors py-1"
+        className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors py-1 px-2 rounded bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] shadow-sm cursor-pointer"
         aria-expanded={expanded}
       >
-        <BookOpenIcon className="w-3.5 h-3.5" />
+        <BookOpenIcon className="w-3.5 h-3.5 text-primary/80" />
         <span>References</span>
         <ChevronDownIcon
           className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
         />
       </button>
       {expanded && (
-        <div className="mt-2 space-y-3 border-l-2 border-background-subtle pl-3">
+        <div className="mt-2 space-y-3 border-l border-white/[0.1] pl-3">
           {images.map((img, i) => (
             <figure key={i} className="space-y-1">
               <AnnotatedImage src={img.url} alt={img.alt} bounds={img.bounds} />
@@ -96,21 +96,18 @@ function ReferenceImages({ images }: { images: ReferenceImage[] }) {
 function ArtifactBuilding({ type, title }: PendingArtifact) {
   const label = title ? `Building ${title}` : type ? `Building ${type} artifact` : 'Building artifact';
   return (
-    <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-background-subtle bg-background-muted w-full">
+    <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-primary/20 bg-background-muted animate-shimmer w-full shadow-[0_0_12px_rgba(255,107,0,0.15)] relative overflow-hidden">
       {type && type !== 'spatial' && (
-        <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/20 text-primary flex-shrink-0">
+        <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/20 text-primary flex-shrink-0 animate-pulse">
           {type}
         </span>
       )}
-      <span className="text-sm text-foreground-muted truncate">{label}</span>
-      <div className="flex gap-1 ml-auto flex-shrink-0">
-        {[0, 150, 300].map(delay => (
-          <span
-            key={delay}
-            className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce"
-            style={{ animationDelay: `${delay}ms` }}
-          />
-        ))}
+      <span className="text-sm text-foreground-muted truncate animate-pulse">{label}</span>
+      <div className="ml-auto flex-shrink-0 flex items-center justify-center">
+        <svg className="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
       </div>
     </div>
   );
@@ -226,7 +223,7 @@ function ChatPane({
                 ? stripSpatialContext(stripArtifacts(textForParsing))
                 : m.text;
             const referenceImages =
-              m.role === 'assistant' && artifacts.length > 0
+              m.role === 'assistant'
                 ? parseReferenceImages(baseText)
                 : [];
             const displayText =
@@ -254,22 +251,27 @@ function ChatPane({
                   timestamp={m.timestamp}
                 >
                   {m.role === 'assistant' ? (
-                    displayText ? (
-                      <div className="prose-ignis">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {displayText}
-                        </ReactMarkdown>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-foreground-subtle py-1">
-                        <span className="text-sm font-medium">Working</span>
-                        <div className="flex gap-1">
-                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="space-y-2">
+                      {displayText ? (
+                        <div className="prose-ignis">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {displayText}
+                          </ReactMarkdown>
                         </div>
-                      </div>
-                    )
+                      ) : (
+                        <div className="flex items-center gap-2 text-foreground-subtle py-1">
+                          <span className="text-sm font-medium">Working</span>
+                          <div className="flex gap-1">
+                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      )}
+                      {referenceImages.length > 0 && (
+                        <ReferenceImages images={referenceImages} />
+                      )}
+                    </div>
                   ) : (
                     m.text
                   )}
@@ -334,11 +336,6 @@ function ChatPane({
                       />
                     ))}
                   </div>
-                )}
-
-                {/* Reference images */}
-                {m.role === 'assistant' && referenceImages.length > 0 && (
-                  <ReferenceImages images={referenceImages} />
                 )}
               </div>
             );

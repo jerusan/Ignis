@@ -98,15 +98,51 @@ export default function ChecklistRenderer({ title, code }: Props) {
 
   if (parseError) {
     return (
-      <div className="flex items-center gap-3 px-4 py-8 w-full justify-center text-zinc-400">
-        <span className="text-[10px] font-mono tracking-widest uppercase text-amber-500/70">Generating</span>
-        <div className="flex gap-1">
-          {[0, 150, 300].map(delay => (
-            <span
-              key={delay}
-              className="w-1.5 h-1.5 rounded-full bg-amber-500/50 animate-bounce"
-              style={{ animationDelay: `${delay}ms` }}
-            />
+      <div className="animate-pulse">
+        {/* Header Skeleton */}
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between px-3 py-2 border-b border-zinc-800/60"
+          style={{ backgroundColor: '#141418' }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500 animate-ping" />
+            <span className="text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-amber-500/70">
+              Generating
+            </span>
+            <span className="text-xs font-medium truncate text-foreground-muted">
+              {title || 'Checklist Procedure...'}
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-foreground-subtle animate-pulse">
+            COMPILING
+          </span>
+        </div>
+
+        {/* Progress bar Skeleton */}
+        <div className="h-px bg-zinc-800 relative overflow-hidden">
+          <div className="h-full bg-amber-500/40 animate-shimmer absolute inset-0 w-full" />
+        </div>
+
+        {/* Step cards Skeletons */}
+        <div className="px-2 py-2 space-y-1.5">
+          {[1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="rounded-lg border border-zinc-800/50 bg-zinc-900/20 px-3 py-3 flex items-start gap-3 relative overflow-hidden animate-shimmer"
+            >
+              {/* Checkbox indicator skeleton */}
+              <div className="mt-0.5 flex-shrink-0">
+                <div className="h-5 w-5 rounded-full border border-zinc-800 bg-zinc-900/60 flex items-center justify-center">
+                  <div className="h-1.5 w-1.5 rounded-full bg-amber-500/30 animate-ping" />
+                </div>
+              </div>
+
+              {/* Text lines skeleton */}
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-zinc-800 rounded-md w-3/4 opacity-60" />
+                <div className="h-2 bg-zinc-900 rounded-md w-1/2 opacity-40" />
+              </div>
+            </div>
           ))}
         </div>
       </div>

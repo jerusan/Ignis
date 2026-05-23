@@ -13,9 +13,9 @@ import React, {
     useRef,
     useState,
 } from 'react';
-import type { ChatArtifact } from './ChatPane';
 import type { SpatialContextTag } from '../lib/artifacts';
 import type { SessionState } from '../lib/chatApi';
+import type { ChatArtifact } from './ChatPane';
 import type { DebugTurn } from './DebugPanel';
 import {
     MachineView,
@@ -101,7 +101,7 @@ const WorkbenchContext = createContext<WorkbenchCtx | null>(null);
 
 // ── Provider ───────────────────────────────────────────────────────────────────
 export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
-    const [isOpen,    setIsOpen]    = useState(true);
+    const [isOpen,    setIsOpen]    = useState(false);
     const [isPinned,  setIsPinned]  = useState(false);
     const [telemetry, setTelemetry] = useState<WelderTelemetry | undefined>();
     const [artifacts, setArtifacts] = useState<ChatArtifact[]>([]);

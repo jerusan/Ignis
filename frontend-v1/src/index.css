@@ -184,6 +184,15 @@ img[alt="Ignis"] {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 @keyframes pulseGlow {
   0% { 
     transform: scale(1); 
@@ -213,6 +222,17 @@ img[alt="Ignis"] {
 
 .animate-slide-down {
   animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--background-muted) 25%,
+    var(--background-subtle) 50%,
+    var(--background-muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
 }
 
 .dash-array-2 {
