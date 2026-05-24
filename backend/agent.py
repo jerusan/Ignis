@@ -13,6 +13,7 @@ Interface (for both eval.py and main.py):
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Generator
 
@@ -31,6 +32,31 @@ MAX_TOKENS = 4096
 MAX_TOOL_ITERATIONS = 5
 
 _client: anthropic.Anthropic | None = None
+CACHE_FILE = ROOT / "data" / "cached_responses.json"
+
+import re
+
+def _normalize_query(query: str) -> str:
+    # Convert to lowercase, strip trailing spaces, and remove basic punctuation
+    normalized = query.lower().strip()
+    normalized = re.sub(r'[?.!,;:"\'\-\(\)]', '', normalized)
+    # Collapse multiple spaces into one
+    normalized = re.sub(r'\s+', ' ', normalized)
+    return normalized
+
+def _load_canned_cache() -> dict:
+    if not CACHE_FILE.exists():
+        return {}
+    try:
+        return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+def _write_canned_cache(cache: dict) -> None:
+    try:
+        CACHE_FILE.write_text(json.dumps(cache, indent=2, sort_keys=True, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"[cache] Failed to write cache: {e}")
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -344,7 +370,49 @@ def _build_system_prompt(session_id: str) -> list[dict]:
 
 def run_agent(messages: list[dict], session_id: str) -> Generator[dict, None, None]:
     """
-    Run the agent loop. Yields event dicts for SSE streaming.
+    Wrapper for run_agent that checks the JSON canned cache first.
+    Only caches single-turn user questions to avoid multi-turn context issues.
+    """
+    use_cache = os.environ.get("DISABLE_CANNED_CACHE", "").lower() not in ("true", "1")
+    
+    is_single_turn = len(messages) == 1 and messages[0].get("role") == "user"
+    normalized_query = ""
+    if is_single_turn and use_cache:
+        normalized_query = _normalize_query(messages[0].get("content", ""))
+        cache = _load_canned_cache()
+        if normalized_query in cache:
+            print(f"[cache] Hit! Replaying canned response for: '{normalized_query}'")
+            for event in cache[normalized_query]:
+                yield event
+            return
+
+    # Cache miss or multi-turn or disabled: run the actual agent loop
+    if not use_cache:
+        print(f"[cache] Disabled. Querying Claude directly for session {session_id}...")
+    else:
+        print(f"[cache] Miss or multi-turn. Querying Claude for session {session_id}...")
+
+    collected_events = []
+    for event in _run_agent_internal(messages, session_id):
+        if is_single_turn and use_cache:
+            collected_events.append(event)
+        
+        # Save to cache if single-turn, cache enabled, and we hit the 'done' event
+        if is_single_turn and use_cache and event.get("type") == "done" and normalized_query and collected_events:
+            try:
+                cache = _load_canned_cache()
+                cache[normalized_query] = collected_events
+                _write_canned_cache(cache)
+                print(f"[cache] Saved response for: '{normalized_query}'")
+            except Exception as e:
+                print(f"[cache] Error saving cache: {e}")
+
+        yield event
+
+
+def _run_agent_internal(messages: list[dict], session_id: str) -> Generator[dict, None, None]:
+    """
+    Run the core agent loop. Yields event dicts for SSE streaming.
     Handles multi-turn tool use automatically.
     """
     client = _get_client()
