@@ -1,7 +1,13 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from './WorkbenchOverlay';
 
 export function FloatingSpannerFab() {
-  const { toggleOpen, isOpen } = useWorkbench();
+  const { toggleOpen, isOpen } = useWorkbench(
+    useShallow((s) => ({
+      toggleOpen: s.toggleOpen,
+      isOpen: s.isOpen,
+    }))
+  );
 
   return (
     <button

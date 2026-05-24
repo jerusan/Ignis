@@ -12,6 +12,7 @@ import type {
 } from '../types/chat';
 import { REGISTRY_BY_VIEW } from './SpatialViewport';
 import { useWorkbenchStore } from '../store/workbenchStore';
+import type { WorkbenchState } from '../store/workbenchStore';
 
 // ── Re-export so consumers can import from one place ──────────────────────────
 export type { WelderTelemetry };
@@ -71,9 +72,13 @@ export function WorkbenchProvider({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────────────
-export function useWorkbench() {
-    return useWorkbenchStore();
+export function useWorkbench<T = WorkbenchState>(
+    selector?: (state: WorkbenchState) => T
+): T {
+    if (selector) {
+        return useWorkbenchStore(selector);
+    }
+    return useWorkbenchStore() as unknown as T;
 }
 
 // ── Inline mini export panel (used by GlobalMachineViewer modify mode) ───────────────────

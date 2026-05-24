@@ -7,6 +7,7 @@
 //   - When all done the panel transitions to a "Machine Ready" summary
 //
 import { useState, useCallback, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import type { ChecklistStep } from '../../lib/artifacts';
 import { silentChecklistStep } from '../../lib/chatApi';
@@ -34,7 +35,13 @@ function SpatialBadge({ step }: { step: ChecklistStep }) {
 }
 
 export default function ChecklistRenderer({ title, code }: Props) {
-  const { setSpatialContext, sessionId, setActiveChecklist } = useWorkbench();
+  const { setSpatialContext, sessionId, setActiveChecklist } = useWorkbench(
+    useShallow((s) => ({
+      setSpatialContext: s.setSpatialContext,
+      sessionId: s.sessionId,
+      setActiveChecklist: s.setActiveChecklist,
+    }))
+  );
 
   const [steps, setSteps]         = useState<ChecklistStep[]>([]);
   const [parseError, setParseError] = useState(false);

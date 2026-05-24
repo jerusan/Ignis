@@ -1,9 +1,16 @@
 import React, { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 import type { ChecklistStep } from '../../lib/artifacts';
 
 export function ChatStepStepper() {
-  const { activeChecklist, spatialContext, sendMessage } = useWorkbench();
+  const { activeChecklist, spatialContext, sendMessage } = useWorkbench(
+    useShallow((s) => ({
+      activeChecklist: s.activeChecklist,
+      spatialContext: s.spatialContext,
+      sendMessage: s.sendMessage,
+    }))
+  );
 
   const steps = useMemo<ChecklistStep[]>(() => {
     if (!activeChecklist) return [];

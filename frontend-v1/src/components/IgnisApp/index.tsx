@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ZapIcon, GaugeIcon, AlertCircleIcon, SlidersHorizontalIcon } from 'lucide-react';
 import ChatPane from '../ChatPane';
 import WizardModeView, {
@@ -166,7 +167,27 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
     registerAssistantConfirmationWriter,
     setActiveArtifact,
     open: openWorkbench,
-  } = useWorkbench();
+  } = useWorkbench(
+    useShallow((s) => ({
+      messages: s.messages,
+      setMessages: s.setMessages,
+      offline: s.offline,
+      setOffline: s.setOffline,
+      isStreaming: s.isStreaming,
+      setIsStreaming: s.setIsStreaming,
+      setArtifacts: s.setArtifacts,
+      setSpatialContext: s.setSpatialContext,
+      setSessionState: s.setSessionState,
+      addTurn: s.addTurn,
+      registerSendMessage: s.registerSendMessage,
+      setActiveChecklist: s.setActiveChecklist,
+      activeChecklist: s.activeChecklist,
+      registerSessionId: s.registerSessionId,
+      registerAssistantConfirmationWriter: s.registerAssistantConfirmationWriter,
+      setActiveArtifact: s.setActiveArtifact,
+      open: s.open,
+    }))
+  );
   const sessionId = useRef(makeId('session'));
   const history = useRef<ApiMessage[]>([]);
 

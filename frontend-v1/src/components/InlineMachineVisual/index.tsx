@@ -8,6 +8,7 @@ import {
 import { SpatialViewport, REGISTRY_BY_VIEW } from '../SpatialViewport';
 import type { MachineView } from '../../types/chat';
 import type { SpatialContextTag } from '../../lib/artifacts';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 
 const VIEW_FULL_LABELS: Record<MachineView, string> = {
@@ -72,7 +73,12 @@ export function InlineMachineVisual({
   onNextStep,
   stepLabel,
 }: InlineMachineVisualProps) {
-  const { setSpatialContext, open } = useWorkbench();
+  const { setSpatialContext, open } = useWorkbench(
+    useShallow((s) => ({
+      setSpatialContext: s.setSpatialContext,
+      open: s.open,
+    }))
+  );
   const registry = REGISTRY_BY_VIEW[spatialContext.view];
   const highlightCount = spatialContext.highlights.length;
   const viewLabel = VIEW_FULL_LABELS[spatialContext.view];

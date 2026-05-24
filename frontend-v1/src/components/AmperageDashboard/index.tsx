@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 import type { FaultCode } from '../../data/faultCodes';
 
@@ -167,7 +168,12 @@ function FaultChip({ code, active, onClick }: { code: string; active: boolean; o
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AmperageDashboard() {
-    const { sessionState, setSessionState } = useWorkbench();
+    const { sessionState, setSessionState } = useWorkbench(
+        useShallow((s) => ({
+            sessionState: s.sessionState,
+            setSessionState: s.setSessionState,
+        }))
+    );
 
     const [specs,           setSpecs]           = useState<SpecsData | null>(null);
     const [selectedProcess, setSelectedProcess] = useState<SpecProcess>('MIG');

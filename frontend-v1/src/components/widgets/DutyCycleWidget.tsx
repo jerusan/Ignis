@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 
 // Mirrors data/specs.json duty_cycles — static for zero-latency display.
@@ -53,7 +54,11 @@ function Pill({ label, active, onClick }: { label: string; active: boolean; onCl
 }
 
 export function DutyCycleWidget({ params }: { params: Record<string, unknown> }) {
-  const { setSessionState } = useWorkbench();
+  const { setSessionState } = useWorkbench(
+    useShallow((s) => ({
+      setSessionState: s.setSessionState,
+    }))
+  );
 
   const initProcess = PROCESSES.some(p => p.key === params.process)
     ? (params.process as ProcessKey) : 'MIG';

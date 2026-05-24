@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { createPortal } from 'react-dom';
 import { WrenchIcon } from 'lucide-react';
 import {
@@ -83,7 +84,19 @@ export function GlobalMachineViewer() {
         sessionState,
         viewportIsFloating,
         setViewportIsFloating,
-    } = useWorkbench();
+    } = useWorkbench(
+        useShallow((s) => ({
+            spatialContext: s.spatialContext,
+            activeView: s.activeView,
+            setActiveView: s.setActiveView,
+            activeChecklist: s.activeChecklist,
+            activeArtifact: s.activeArtifact,
+            setActiveArtifact: s.setActiveArtifact,
+            sessionState: s.sessionState,
+            viewportIsFloating: s.viewportIsFloating,
+            setViewportIsFloating: s.setViewportIsFloating,
+        }))
+    );
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
     const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');

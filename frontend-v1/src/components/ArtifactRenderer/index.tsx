@@ -7,6 +7,7 @@ import {
   AlertTriangleIcon,
   RefreshCwIcon } from
 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 import { WIDGET_REGISTRY } from '../widgets';
 import type { ArtifactType } from '../../types/chat';
@@ -116,7 +117,15 @@ function ArtifactRenderer({
   const [error, setError] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
-  const { addPinnedArtifact, removePinnedArtifact, pinnedArtifacts, open, setActiveChecklist } = useWorkbench();
+  const { addPinnedArtifact, removePinnedArtifact, pinnedArtifacts, open, setActiveChecklist } = useWorkbench(
+    useShallow((s) => ({
+      addPinnedArtifact: s.addPinnedArtifact,
+      removePinnedArtifact: s.removePinnedArtifact,
+      pinnedArtifacts: s.pinnedArtifacts,
+      open: s.open,
+      setActiveChecklist: s.setActiveChecklist,
+    }))
+  );
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
 
   // Compact chip — renders when the full artifact lives in the workbench panel.

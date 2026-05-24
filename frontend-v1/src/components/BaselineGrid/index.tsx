@@ -8,6 +8,7 @@ import {
   type WeldProcess,
   type WireSize,
 } from '../../data/baselineGrid';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -186,7 +187,11 @@ function EmptyCard() {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function BaselineGrid() {
-  const { setSessionState } = useWorkbench();
+  const { setSessionState } = useWorkbench(
+    useShallow((s) => ({
+      setSessionState: s.setSessionState,
+    }))
+  );
   const { data, loading, error } = useBaselineGrid();
 
   const [process,   setProcess]   = useState<WeldProcess | null>(null);

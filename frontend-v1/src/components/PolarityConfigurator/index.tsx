@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorkbench } from '../WorkbenchOverlay';
 import CableDiagram from './CableDiagram';
 
@@ -83,7 +84,12 @@ function resolveProcessKey(raw: string | undefined): ProcessKey {
 }
 
 export function PolarityConfigurator({ initialProcess }: { initialProcess?: string }) {
-    const { sessionState, setSessionState } = useWorkbench();
+    const { sessionState, setSessionState } = useWorkbench(
+        useShallow((s) => ({
+            sessionState: s.sessionState,
+            setSessionState: s.setSessionState,
+        }))
+    );
     const [specs, setSpecs] = useState<SpecsData | null>(null);
     // Seed from explicit prop first; fall back to session state via effect below
     const [selectedProcess, setSelectedProcess] = useState<ProcessKey>(

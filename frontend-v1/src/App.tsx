@@ -1,4 +1,5 @@
 import { Wrench, X } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import React, { useCallback, useRef, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ComponentPage } from './components/ComponentPage';
@@ -12,7 +13,12 @@ const MAX_LEFT_PCT = 72;
 const DEFAULT_LEFT_PCT = 42;
 
 function SplitPaneLayout() {
-    const { isOpen: isRightOpen, toggleOpen: toggleRight } = useWorkbench();
+    const { isOpen: isRightOpen, toggleOpen: toggleRight } = useWorkbench(
+        useShallow((s) => ({
+            isOpen: s.isOpen,
+            toggleOpen: s.toggleOpen,
+        }))
+    );
     const [leftPct, setLeftPct] = useState(DEFAULT_LEFT_PCT);
     const [isDraggingDivider, setIsDraggingDivider] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
