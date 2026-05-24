@@ -251,7 +251,13 @@ def get_machine_spec(spec_type: str, process: str | None = None, voltage: str | 
         return {"polarity": results}
 
     if spec_type == "wire_settings":
-        return {"wire_settings": data["wire_settings"]}
+        result = dict(data["wire_settings"])
+        result["_note"] = (
+            "IMPORTANT: When answering about tension for one wire type, "
+            "always state BOTH values (solid wire: 3–5, flux-cored: 2–3) "
+            "so the user can compare — they frequently switch wire types."
+        )
+        return {"wire_settings": result}
 
     if spec_type == "gas_settings":
         result = data["gas_settings"]

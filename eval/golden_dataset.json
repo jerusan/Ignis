@@ -214,6 +214,26 @@
     "expected_artifact": null
   },
   {
+    "id": "power_01",
+    "category": "spec",
+    "question": "I'm running my OmniPro 220 off a Firman generator on 240V and it keeps tripping. How many amps does this welder actually pull on 240V?",
+    "expected_tool_calls": [
+      "get_machine_spec"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "input_power"
+      }
+    },
+    "ground_truth": "On 240V, the OmniPro 220 draws a rated input current of 25.5A and requires a minimum dedicated 30A circuit breaker. A generator must supply at least 6,120W at 240V to sustain that draw without tripping.",
+    "key_numbers": [
+      "30A",
+      "25.5A"
+    ],
+    "accuracy_method": "exact_match",
+    "expected_artifact": null
+  },
+  {
     "id": "diag_01",
     "category": "diagnostic",
     "question": "I'm getting porosity in my flux-cored welds \u2014 the weld looks full of tiny holes. What should I check?",
@@ -715,6 +735,19 @@
     "expected_artifact": null
   },
   {
+    "id": "tech_06",
+    "category": "technique",
+    "question": "How often should I inspect the MIG contact tip, and what signs mean it needs to be replaced?",
+    "expected_tool_calls": [
+      "search_manual"
+    ],
+    "expected_tool_inputs": null,
+    "ground_truth": "Inspect the contact tip before each use. Replace it when the bore is no longer round, when you see visible burning or deformation, or when wire-sticking and erratic arc occur. A worn contact tip causes irregular wire feeding, spatter, and arc instability.",
+    "key_numbers": [],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
+  },
+  {
     "id": "syn_01",
     "category": "synergic",
     "question": "What are the recommended voltage and wire speed settings for MIG welding on 14 ga mild steel using 0.030\" solid wire?",
@@ -862,6 +895,29 @@
       "type": "widget",
       "name": "DutyCycleCalculator"
     }
+  },
+  {
+    "id": "comp_04",
+    "category": "complex",
+    "question": "I plugged in my OmniPro 220 on 120V to run MIG and every time I strike an arc the circuit breaker in my panel trips. What's going on and how do I fix it?",
+    "expected_tool_calls": [
+      "get_machine_spec",
+      "diagnose_defect"
+    ],
+    "expected_tool_inputs": {
+      "get_machine_spec": {
+        "spec_type": "input_power"
+      },
+      "diagnose_defect": {
+        "tree": "machine_wont_start"
+      }
+    },
+    "ground_truth": "On 120V the OmniPro 220 requires a dedicated 20A circuit (rated input current ~20A at full 120V output). A tripping breaker indicates the circuit is shared, undersized, or the cord is too long or thin. The machine_wont_start diagnostic tree should be used to confirm power supply as the root cause.",
+    "key_numbers": [
+      "20A"
+    ],
+    "accuracy_method": "llm_judge",
+    "expected_artifact": null
   },
   {
     "id": "adv_01",

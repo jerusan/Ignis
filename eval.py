@@ -112,11 +112,18 @@ Now evaluate the following response using the exact same standards.
    - 1 = Partial credit or one minor error
    - 0 = Any hallucinated spec number or fundamentally wrong
    → If key_numbers non-empty and any number wrong/missing → max 1
+   Chain-of-Thought Verification: if the question involves troubleshooting and the agent
+   guesses a root cause or fix without tracing the diagnostic tree step-by-step, cap at 1.
 
 2. tool_routing (0-2):
    - 2 = All expected tools called correctly
    - 1 = Some but not all
    - 0 = Wrong or unnecessary tools
+   Chain-of-Thought Verification (applies when a diagnostic tree is involved):
+   → Score 0 if the agent states a terminal fix or root cause WITHOUT first calling `diagnose_defect`
+     sequentially (i.e., initial call with only `tree`, then subsequent calls with `node_id` + `user_answer`).
+   → Deduct 1 point if the agent asks the user a yes/no question that was already answered
+     in the user's original message (redundant question penalty).
 
 3. multimodal (0-2):
    - Only score if requires_image=True
@@ -174,7 +181,9 @@ def check_exact_match(response: str, key_numbers: list[str]) -> tuple[bool, str]
 
     replacements = {
         " amperes": "a", " ampere": "a", " amps": "a", " amp": "a",
-        " volts": "v", " volt": "v", " ipm": "ipm", " scfh": "scfh",
+        "-ampere": "a", "-amperes": "a", "-amps": "a", "-amp": "a",
+        " volts": "v", " volt": "v", "-volts": "v", "-volt": "v",
+        " ipm": "ipm", " scfh": "scfh",
         " percent": "%", " %": "%", "a.": "a", "v.": "v", "a ": "a", "v ": "v",
     }
     for old, new in replacements.items():
@@ -285,6 +294,7 @@ def judge_response(
     question: dict,
     response: str,
     tools_called: list[str],
+    tool_calls: list[dict],
     showed_image: bool,
 ) -> dict:
     """Judge with ephemeral prompt caching."""
@@ -296,7 +306,8 @@ Key numbers: {json.dumps(question.get("key_numbers", []))}
 
 Agent's response: {response[:2200]}
 
-Tools called: {json.dumps(tools_called)}
+Tools called (names only): {json.dumps(tools_called)}
+Tool calls with arguments: {json.dumps(tool_calls)}
 Expected tools: {json.dumps(question.get("expected_tool_calls", []))}
 Requires image: {question.get("requires_image", False)}
 Agent showed image: {showed_image}"""
@@ -466,7 +477,7 @@ def run_eval(
             }
         else:
             if client:
-                scores = judge_response(client, q, response, tools_called, showed_image)
+                scores = judge_response(client, q, response, tools_called, tool_calls, showed_image)
             else:
                 scores = {
                     "technical_accuracy": 0, "tool_routing": 0, "multimodal": 0,
@@ -599,7 +610,7 @@ def _report_variance(all_runs: list[list[dict]]) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Ignis eval harness")
     parser.add_argument("--ids", nargs="+", help="Run specific question IDs")
-    parser.add_argument("--category", choices=["spec", "diagnostic", "polarity_setup", "fault_code", "technique", "synergic", "complex", "adversarial"])
+    parser.add_argument("--category", choices=["spec", "diagnostic", "polarity_setup", "fault_code", "technique", "synergic", "complex", "adversarial", "no_info"])
     parser.add_argument("--no-judge", action="store_true")
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--judge-only", action="store_true")

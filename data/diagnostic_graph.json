@@ -266,7 +266,7 @@
           "image_trigger": "interior_controls_p9"
         }
       },
-      "quick_tips": "Two possible root causes depending on symptom \u2014 If motor NOT spinning: (1) MIG gun Eurofitting not plugged into front panel socket; (2) No relay click when trigger pressed \u2014 trigger switch may be faulty; (3) Drive motor fault. If motor IS spinning but wire doesn\u2019t feed: (4) Drive roll tension wrong \u2014 2-3 for flux-cored, 3-5 for solid wire; (5) Liner kinked or worn; (6) Contact tip clogged with spatter.",
+      "quick_tips": "Key quick fixes: Check MIG gun Eurofitting is plugged into front panel socket. Press trigger and listen for relay click (no click = faulty trigger switch). If motor IS spinning but wire doesn\u2019t feed: drive roll tension wrong (2-3 flux-cored, 3-5 solid wire), liner kinked, or contact tip clogged.",
       "quick_tips_images": [
         "interior_controls_p9"
       ]
