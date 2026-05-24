@@ -84,6 +84,7 @@ export function GlobalMachineViewer() {
         sessionState,
         viewportIsFloating,
         setViewportIsFloating,
+        isStreaming,
     } = useWorkbench(
         useShallow((s) => ({
             spatialContext: s.spatialContext,
@@ -95,6 +96,7 @@ export function GlobalMachineViewer() {
             sessionState: s.sessionState,
             viewportIsFloating: s.viewportIsFloating,
             setViewportIsFloating: s.setViewportIsFloating,
+            isStreaming: s.isStreaming,
         }))
     );
 
@@ -610,7 +612,7 @@ export function GlobalMachineViewer() {
 
     return (
         <div
-            className={`flex flex-col h-full transition-colors duration-300 ${
+            className={`relative flex flex-col h-full transition-colors duration-300 ${
                 navFlash ? 'border-l-2 border-orange-500/50' : 'border-l border-zinc-800/50'
             }`}
             style={{ backgroundColor: '#141418' }}
@@ -984,6 +986,36 @@ export function GlobalMachineViewer() {
                     </div>
                 </div>,
                 portalEl
+            )}
+
+            {/* ── Artifact generation overlay ───────────────────────────── */}
+            {activeArtifact && (
+                <div
+                    className="absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300"
+                    style={{
+                        background: 'rgba(20, 20, 24, 0.72)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        opacity: isStreaming ? 1 : 0,
+                        pointerEvents: isStreaming ? 'auto' : 'none',
+                    }}
+                >
+                    <svg
+                        className="animate-spin h-7 w-7 mb-3"
+                        style={{ color: '#ff6b00' }}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                    >
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                    <span
+                        className="text-xs font-mono tracking-[0.15em] uppercase animate-pulse"
+                        style={{ color: '#8891a6' }}
+                    >
+                        Generating
+                    </span>
+                </div>
             )}
         </div>
     );
