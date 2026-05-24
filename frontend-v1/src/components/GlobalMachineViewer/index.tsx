@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { WrenchIcon } from 'lucide-react';
 import {
     SpatialViewport,
@@ -72,7 +73,17 @@ const MINI_H = 60;
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function GlobalMachineViewer() {
-    const { spatialContext, activeView, setActiveView, activeChecklist, activeArtifact, setActiveArtifact, sessionState } = useWorkbench();
+    const {
+        spatialContext,
+        activeView,
+        setActiveView,
+        activeChecklist,
+        activeArtifact,
+        setActiveArtifact,
+        sessionState,
+        viewportIsFloating,
+        setViewportIsFloating,
+    } = useWorkbench();
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
     const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');
@@ -456,6 +467,124 @@ export function GlobalMachineViewer() {
     const miniRectH  = (viewportDims.h / zoom) * miniScale;
     const showMiniMap = zoom > fitZoom * 1.15 && miniScale > 0 && workbenchTab === 'machine';
 
+    const renderViewportCanvas = () => {
+        return (
+            <div
+                ref={viewportRef}
+                className="w-full h-full relative overflow-hidden"
+                style={{
+                    cursor: isPanning ? 'grabbing' : 'grab',
+                    backgroundColor: '#121315',
+                    backgroundImage: `
+                        radial-gradient(circle at center, rgba(44,48,54,0.4) 0%, transparent 65%),
+                        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '100% 100%, 32px 32px, 32px 32px',
+                }}
+                onPointerDown={handlePanPointerDown}
+                onPointerMove={handlePanPointerMove}
+                onPointerUp={handlePanPointerUp}
+                onPointerLeave={handlePanPointerUp}
+            >
+                {/* Scaled + panned content — opacity fades on view switch */}
+                <div
+                    ref={contentRef}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transformOrigin: '0 0',
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                        willChange: 'transform',
+                        opacity: viewOpacity,
+                        transition: 'opacity 150ms ease-in-out',
+                    }}
+                >
+                    <SpatialViewport
+                        currentView={activeView}
+                        registry={registry}
+                        highlightedComponents={highlightedTargets}
+                        searchHighlights={filteredKeys.length > 0 ? filteredKeys : undefined}
+                        drawPath={drawPath}
+                        drawPathAnimated={drawPath}
+                        pathDirection={pathDirection}
+                        isModifyMode={isModifyMode}
+                        isOverlay
+                        transparent
+                        onAnnotationClick={handleAnnotationClick}
+                        onSave={handleSave}
+                        onDiscard={handleDiscard}
+                        zoom={zoom}
+                    />
+                </div>
+
+                {/* ── Mini-map — bottom-right, above ZoomHud ──────────── */}
+                {showMiniMap && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: 56,
+                            right: 16,
+                            width: MINI_W,
+                            height: MINI_H,
+                            overflow: 'hidden',
+                            borderRadius: 4,
+                            border: '1px solid rgba(255,255,255,0.14)',
+                            backgroundColor: '#0a0b0e',
+                            zIndex: 25,
+                            pointerEvents: 'none',
+                            boxShadow: '0 2px 12px rgba(0,0,0,0.7)',
+                        }}
+                    >
+                        {/* Scaled-down full machine view */}
+                        <div style={{
+                            transform: `scale(${miniScale})`,
+                            transformOrigin: '0 0',
+                            width: viewportDims.w,
+                            height: contentH,
+                            pointerEvents: 'none',
+                        }}>
+                            <SpatialViewport
+                                currentView={activeView}
+                                registry={registry}
+                                highlightedComponents={highlightedTargets}
+                                drawPath={false}
+                                isOverlay
+                                transparent
+                                pathDirection={pathDirection}
+                            />
+                        </div>
+                        {/* Viewport window rectangle */}
+                        <div style={{
+                            position: 'absolute',
+                            left: miniRectX,
+                            top: miniRectY,
+                            width: Math.max(4, miniRectW),
+                            height: Math.max(4, miniRectH),
+                            border: '1.5px solid rgba(255,255,255,0.85)',
+                            borderRadius: 2,
+                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            pointerEvents: 'none',
+                            boxShadow: '0 0 0 1px rgba(0,0,0,0.4)',
+                        }} />
+                    </div>
+                )}
+
+                {/* Zoom HUD — bottom-left so the sidebar never covers it */}
+                <ZoomHud
+                    displayPct={Math.round((zoom / fitZoom) * 100)}
+                    onZoomIn={zoomIn}
+                    onZoomOut={zoomOut}
+                    onFit={resetView}
+                />
+            </div>
+        );
+    };
+
+    const portalEl = typeof document !== 'undefined' ? document.getElementById('floating-viewport-root') : null;
+
     return (
         <div
             className={`flex flex-col h-full transition-colors duration-300 ${
@@ -503,6 +632,19 @@ export function GlobalMachineViewer() {
                     <span className="text-[9px] font-mono uppercase tracking-widest" style={{ color: '#3d4760' }}>
                         Machine Viewer
                     </span>
+                    {workbenchTab === 'machine' && (
+                        <button
+                            onClick={() => setViewportIsFloating(!viewportIsFloating)}
+                            className={`text-[9px] font-mono px-2 py-1 rounded border transition-all ${
+                                viewportIsFloating
+                                    ? 'bg-orange-500/15 border-orange-500/50 text-orange-400 font-bold'
+                                    : 'border-zinc-800 text-zinc-700 hover:border-zinc-700 hover:text-zinc-400'
+                            }`}
+                            title={viewportIsFloating ? 'Dock viewport back to pane' : 'Float viewport overlay'}
+                        >
+                            {viewportIsFloating ? '⤓ Docked' : '⇄ Float'}
+                        </button>
+                    )}
                     <button
                         onClick={() => setIsModifyMode(m => { if (!m) setExportCode(null); return !m; })}
                         className={`text-[9px] font-mono px-2 py-1 rounded border transition-all ${
@@ -618,117 +760,30 @@ export function GlobalMachineViewer() {
             {/* ── Zoom / pan canvas ────────────────────────────────────────── */}
             {workbenchTab === 'machine' && <div className="flex-1 min-h-0 flex flex-row">
                 {/* Viewport (Product Viewer) */}
-                <div
-                    ref={viewportRef}
-                    className="flex-1 min-h-0 w-0 relative overflow-hidden"
-                    style={{
-                        cursor: isPanning ? 'grabbing' : 'grab',
-                        backgroundColor: '#121315',
-                        backgroundImage: `
-                            radial-gradient(circle at center, rgba(44,48,54,0.4) 0%, transparent 65%),
-                            linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px)
-                        `,
-                        backgroundSize: '100% 100%, 32px 32px, 32px 32px',
-                    }}
-                    onPointerDown={handlePanPointerDown}
-                    onPointerMove={handlePanPointerMove}
-                    onPointerUp={handlePanPointerUp}
-                    onPointerLeave={handlePanPointerUp}
-                >
-                    {/* Scaled + panned content — opacity fades on view switch */}
-                    <div
-                        ref={contentRef}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            transformOrigin: '0 0',
-                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                            willChange: 'transform',
-                            opacity: viewOpacity,
-                            transition: 'opacity 150ms ease-in-out',
-                        }}
-                    >
-                        <SpatialViewport
-                            currentView={activeView}
-                            registry={registry}
-                            highlightedComponents={highlightedTargets}
-                            searchHighlights={filteredKeys.length > 0 ? filteredKeys : undefined}
-                            drawPath={drawPath}
-                            drawPathAnimated={drawPath}
-                            pathDirection={pathDirection}
-                            isModifyMode={isModifyMode}
-                            isOverlay
-                            transparent
-                            onAnnotationClick={handleAnnotationClick}
-                            onSave={handleSave}
-                            onDiscard={handleDiscard}
-                            zoom={zoom}
-                        />
-                    </div>
-
-                    {/* ── Mini-map — bottom-right, above ZoomHud ──────────── */}
-                    {showMiniMap && (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                bottom: 56,
-                                right: 16,
-                                width: MINI_W,
-                                height: MINI_H,
-                                overflow: 'hidden',
-                                borderRadius: 4,
-                                border: '1px solid rgba(255,255,255,0.14)',
-                                backgroundColor: '#0a0b0e',
-                                zIndex: 25,
-                                pointerEvents: 'none',
-                                boxShadow: '0 2px 12px rgba(0,0,0,0.7)',
-                            }}
-                        >
-                            {/* Scaled-down full machine view */}
-                            <div style={{
-                                transform: `scale(${miniScale})`,
-                                transformOrigin: '0 0',
-                                width: viewportDims.w,
-                                height: contentH,
-                                pointerEvents: 'none',
-                            }}>
-                                <SpatialViewport
-                                    currentView={activeView}
-                                    registry={registry}
-                                    highlightedComponents={highlightedTargets}
-                                    drawPath={false}
-                                    isOverlay
-                                    transparent
-                                    pathDirection={pathDirection}
-                                />
-                            </div>
-                            {/* Viewport window rectangle */}
-                            <div style={{
-                                position: 'absolute',
-                                left: miniRectX,
-                                top: miniRectY,
-                                width: Math.max(4, miniRectW),
-                                height: Math.max(4, miniRectH),
-                                border: '1.5px solid rgba(255,255,255,0.85)',
-                                borderRadius: 2,
-                                backgroundColor: 'rgba(255,255,255,0.06)',
-                                pointerEvents: 'none',
-                                boxShadow: '0 0 0 1px rgba(0,0,0,0.4)',
-                            }} />
+                {viewportIsFloating ? (
+                    <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-6 text-center bg-[#121315]">
+                        <div className="w-16 h-16 rounded-full border border-orange-500/25 bg-orange-500/5 flex items-center justify-center mb-4">
+                            <svg viewBox="0 0 16 16" className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="1.5" y="1.5" width="13" height="13" rx="1.5"/>
+                                <line x1="6.5" y1="1.5" x2="6.5" y2="14.5"/>
+                            </svg>
                         </div>
-                    )}
-
-                    {/* Zoom HUD — bottom-left so the sidebar never covers it */}
-                    <ZoomHud
-                        displayPct={Math.round((zoom / fitZoom) * 100)}
-                        onZoomIn={zoomIn}
-                        onZoomOut={zoomOut}
-                        onFit={resetView}
-                    />
-                </div>
+                        <h3 className="text-sm font-semibold text-zinc-300 mb-1">Viewport is Floating</h3>
+                        <p className="text-xs text-zinc-550 mb-5 max-w-[240px] leading-relaxed">
+                            The interactive machine viewport is currently overlaying the chat portal.
+                        </p>
+                        <button
+                            onClick={() => setViewportIsFloating(false)}
+                            className="px-3 py-1.5 rounded bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 text-orange-400 text-xs font-mono uppercase tracking-wider transition-colors"
+                        >
+                            Dock Viewport
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex-1 min-h-0 w-0 relative overflow-hidden">
+                        {renderViewportCanvas()}
+                    </div>
+                )}
 
                 {/* ── Component Section (Right Sidebar) ────────────────────────── */}
                 <div
@@ -874,6 +929,39 @@ export function GlobalMachineViewer() {
                     )}
                 </div>
             </div>}
+            {viewportIsFloating && portalEl && createPortal(
+                <div 
+                    className="pointer-events-auto w-[460px] h-[360px] flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden"
+                    style={{
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.06)',
+                        position: 'absolute',
+                        bottom: '80px',
+                        right: '24px',
+                        zIndex: 50,
+                    }}
+                >
+                    {/* Floating Header */}
+                    <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[#0f1012] border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400">
+                                Machine Viewport
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => setViewportIsFloating(false)}
+                            className="text-[9px] font-mono px-2 py-0.5 rounded border border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 transition-colors"
+                        >
+                            Dock ⤓
+                        </button>
+                    </div>
+                    {/* Viewport content */}
+                    <div className="flex-1 min-h-0 relative">
+                        {renderViewportCanvas()}
+                    </div>
+                </div>,
+                portalEl
+            )}
         </div>
     );
 }

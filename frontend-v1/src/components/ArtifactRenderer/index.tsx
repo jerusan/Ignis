@@ -116,7 +116,7 @@ function ArtifactRenderer({
   const [error, setError] = useState<string | null>(null);
   const [renderKey, setRenderKey] = useState(0);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
-  const { addPinnedArtifact, pinnedArtifacts, open, setActiveChecklist } = useWorkbench();
+  const { addPinnedArtifact, removePinnedArtifact, pinnedArtifacts, open, setActiveChecklist } = useWorkbench();
   const isPinned = !!id && pinnedArtifacts.some(p => p.id === id);
 
   // Compact chip — renders when the full artifact lives in the workbench panel.
@@ -196,11 +196,18 @@ function ArtifactRenderer({
           {id && (
             <button
               type="button"
-              onClick={() => addPinnedArtifact({ id, type, title, code, source_pages, widgetName })}
-              disabled={isPinned}
-              className={`p-1 rounded hover:bg-background-subtle text-foreground-muted ${isPinned ? 'opacity-40 cursor-not-allowed' : ''}`}
-              aria-label={isPinned ? 'Already pinned' : 'Pin to workbench'}
-              title={isPinned ? 'Already pinned' : 'Pin to workbench'}>
+              onClick={() => {
+                if (isPinned) {
+                  removePinnedArtifact(id);
+                } else {
+                  addPinnedArtifact({ id, type, title, code, source_pages, widgetName });
+                }
+              }}
+              className={`p-1 rounded hover:bg-white/5 transition-all ${
+                isPinned ? 'text-orange-500 hover:text-orange-400' : 'text-zinc-550 hover:text-zinc-300'
+              }`}
+              aria-label={isPinned ? 'Unpin from workbench' : 'Pin to workbench'}
+              title={isPinned ? 'Unpin from workbench' : 'Pin to workbench'}>
               <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill={isPinned ? 'currentColor' : 'none'}
                 stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4.5 1h5v4.5l2 2.5H2.5l2-2.5V1zM7 8v5" />
@@ -293,11 +300,18 @@ function ArtifactRenderer({
           {id && (
             <button
               type="button"
-              onClick={() => addPinnedArtifact({ id, type, title, code, source_pages })}
-              disabled={isPinned}
-              className={`p-1 rounded hover:bg-background-subtle text-foreground-muted ${isPinned ? 'opacity-40 cursor-not-allowed' : ''}`}
-              aria-label={isPinned ? 'Already pinned' : 'Pin to workbench'}
-              title={isPinned ? 'Already pinned' : 'Pin to workbench'}>
+              onClick={() => {
+                if (isPinned) {
+                  removePinnedArtifact(id);
+                } else {
+                  addPinnedArtifact({ id, type, title, code, source_pages });
+                }
+              }}
+              className={`p-1 rounded hover:bg-white/5 transition-all ${
+                isPinned ? 'text-orange-500 hover:text-orange-400' : 'text-zinc-550 hover:text-zinc-300'
+              }`}
+              aria-label={isPinned ? 'Unpin from workbench' : 'Pin to workbench'}
+              title={isPinned ? 'Unpin from workbench' : 'Pin to workbench'}>
               <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill={isPinned ? 'currentColor' : 'none'}
                 stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4.5 1h5v4.5l2 2.5H2.5l2-2.5V1zM7 8v5" />

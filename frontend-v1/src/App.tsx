@@ -43,13 +43,14 @@ function SplitPaneLayout() {
         >
             {/* ── Left pane — chat ──────────────────────────────────────── */}
             <div
-                className="h-full overflow-hidden flex-shrink-0"
+                className="h-full overflow-hidden flex-shrink-0 relative"
                 style={{
                     width: isRightOpen ? `${leftPct}%` : '100%',
                     transition: isDraggingDivider ? 'none' : 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
                 }}
             >
                 <IgnisApp onToggleWorkbench={toggleRight} workbenchOpen={isRightOpen} />
+                <div id="floating-viewport-root" className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center" />
             </div>
 
             {/* ── Draggable 1px divider ─────────────────────────────────── */}

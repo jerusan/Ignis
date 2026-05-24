@@ -18,6 +18,7 @@ import {
 import { streamChat } from '../../lib/chatApi';
 import type { ChatMessage, ChatToolCall, ApiMessage } from '../../types/chat';
 import { useWorkbench } from '../WorkbenchOverlay';
+import { mapToolCallToWidget } from '../widgets/toolRegistry';
 
 const INPUT_COST_PER_TOKEN = 3 / 1_000_000;
 const OUTPUT_COST_PER_TOKEN = 15 / 1_000_000;
@@ -147,19 +148,33 @@ interface IgnisAppProps {
 }
 
 export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [offline, setOffline] = useState(
-    typeof navigator !== 'undefined' ? !navigator.onLine : false
-  );
-  const [isStreaming, setIsStreaming] = useState(false);
+  const {
+    messages,
+    setMessages,
+    offline,
+    setOffline,
+    isStreaming,
+    setIsStreaming,
+    setArtifacts,
+    setSpatialContext,
+    setSessionState,
+    addTurn,
+    registerSendMessage,
+    setActiveChecklist,
+    activeChecklist,
+    registerSessionId,
+    registerAssistantConfirmationWriter,
+    setActiveArtifact,
+    open: openWorkbench,
+  } = useWorkbench();
   const sessionId = useRef(makeId('session'));
   const history = useRef<ApiMessage[]>([]);
-  const {
-    setArtifacts, setSpatialContext, setSessionState, addTurn,
-    registerSendMessage, setActiveChecklist, activeChecklist,
-    registerSessionId, registerAssistantConfirmationWriter,
-    setActiveArtifact, open: openWorkbench,
-  } = useWorkbench();
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      setOffline(!navigator.onLine);
+    }
+  }, [setOffline]);
 
   // ── Wizard state ─────────────────────────────────────────────────────────
   // "text wizard" = triggered by detecting 3+ numbered steps in response text
@@ -207,7 +222,7 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [setOffline]);
 
   // ── Core send ─────────────────────────────────────────────────────────────
   const sendMessage = useCallback(
@@ -295,12 +310,36 @@ export function IgnisApp({ onToggleWorkbench, workbenchOpen = false }: IgnisAppP
 
           if (event.type === 'tool_result') {
             const result = stringifyToolResult(event.content);
-            setMessages((current) =>
-              updateAssistant(current, assistantId, (message) => ({
+            let inputArgs: Record<string, any> | undefined = undefined;
+
+            setMessages((current) => {
+              const assistantMessage = current.find((m) => m.id === assistantId);
+              const matchedCall = assistantMessage?.toolCalls?.find(
+                (c) => c.tool === event.tool && c.status === 'running'
+              );
+              if (matchedCall) {
+                inputArgs = matchedCall.input;
+              }
+              return updateAssistant(current, assistantId, (message) => ({
                 ...message,
                 toolCalls: markToolDone(message.toolCalls, event.tool, result)
-              }))
-            );
+              }));
+            });
+
+            if (inputArgs) {
+              const widgetMeta = mapToolCallToWidget(event.tool, inputArgs);
+              if (widgetMeta) {
+                const newArtifact = {
+                  id: makeId('artifact'),
+                  type: 'widget' as const,
+                  title: widgetMeta.title,
+                  widgetName: widgetMeta.widgetName,
+                  code: JSON.stringify(inputArgs),
+                };
+                setActiveArtifact(newArtifact);
+                openWorkbench();
+              }
+            }
           }
 
           if (event.type === 'done') {
