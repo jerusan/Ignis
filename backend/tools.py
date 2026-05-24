@@ -396,7 +396,7 @@ def get_visual(image_id: str | None = None, query: str | None = None) -> dict:
 
 
 _SECTION_CHUNKS: dict[str, list[str]] = {
-    "wire_setup": ["wire_spool_install", "wire_feed_setup"],
+    "wire_setup": ["wire_spool_install", "wire_feed_setup", "optional_settings"],
     "tig_stick": ["tig_torch_assembly", "tungsten_grinding", "stick_welding_technique"],
     "welding_tips": ["mig_welding_technique"],
     "maintenance": ["maintenance"],

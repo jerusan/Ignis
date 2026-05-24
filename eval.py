@@ -394,7 +394,7 @@ def check_data_integrity_status() -> None:
 
     if not FLAG_PATH.exists():
         print("⚠ WARNING: Data integrity flag file '.data_integrity_passed' does not exist.", file=sys.stderr)
-        print("Run 'python eval_data.py' to verify ingestion structure.", file=sys.stderr)
+        print("Run 'bash run_ingestion.sh' to rebuild data, or touch 'eval/.data_integrity_passed' once verified.", file=sys.stderr)
         print("─" * 90)
         return
 
@@ -403,7 +403,7 @@ def check_data_integrity_status() -> None:
     if outdated_files:
         print("⚠ WARNING: Data files modified since last integrity check:", file=sys.stderr)
         print(f"  {', '.join(outdated_files)}", file=sys.stderr)
-        print("Re-run 'python eval_data.py' before continuing.", file=sys.stderr)
+        print("Re-run 'bash run_ingestion.sh' or touch 'eval/.data_integrity_passed' to clear.", file=sys.stderr)
         print("─" * 90)
 
 
