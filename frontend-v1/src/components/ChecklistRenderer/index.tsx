@@ -164,7 +164,7 @@ export default function ChecklistRenderer({ title, code }: Props) {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div>
+    <div className="animate-fade-in">
       <style>{`
         @keyframes ignisFadeIn {
           from { opacity: 0; transform: translateY(8px); }

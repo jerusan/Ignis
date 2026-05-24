@@ -23,6 +23,16 @@ function SplitPaneLayout() {
     const [isDraggingDivider, setIsDraggingDivider] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const handleToggleRight = useCallback(() => {
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                toggleRight();
+            });
+        } else {
+            toggleRight();
+        }
+    }, [toggleRight]);
+
     const handleDividerPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDraggingDivider(true);
@@ -55,7 +65,7 @@ function SplitPaneLayout() {
                     transition: isDraggingDivider ? 'none' : 'width 0.35s cubic-bezier(0.4,0,0.2,1)',
                 }}
             >
-                <IgnisApp onToggleWorkbench={toggleRight} workbenchOpen={isRightOpen} />
+                <IgnisApp onToggleWorkbench={handleToggleRight} workbenchOpen={isRightOpen} />
                 <div id="floating-viewport-root" className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center" />
             </div>
 
@@ -99,7 +109,7 @@ function SplitPaneLayout() {
 
             {/* ── Floating spanner FAB — toggles machine viewer ─────────── */}
             <button
-                onClick={toggleRight}
+                onClick={handleToggleRight}
                 title={isRightOpen ? 'Close machine viewer' : 'Open machine viewer'}
                 aria-label={isRightOpen ? 'Close machine viewer' : 'Open machine viewer'}
                 className="fixed bottom-20 right-6 z-50 w-14 h-14 rounded-full 

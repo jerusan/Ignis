@@ -99,7 +99,17 @@ export function GlobalMachineViewer() {
     );
 
     // ── Workbench panel tab ───────────────────────────────────────────────────
-    const [workbenchTab, setWorkbenchTab] = useState<'machine' | 'artifact'>('machine');
+    const [workbenchTab, setWorkbenchTabState] = useState<'machine' | 'artifact'>('machine');
+
+    const setWorkbenchTab = useCallback((tab: 'machine' | 'artifact' | ((prev: 'machine' | 'artifact') => 'machine' | 'artifact')) => {
+        if (document.startViewTransition) {
+            document.startViewTransition(() => {
+                setWorkbenchTabState(tab);
+            });
+        } else {
+            setWorkbenchTabState(tab);
+        }
+    }, []);
 
     useEffect(() => {
         if (activeArtifact) {
@@ -107,7 +117,7 @@ export function GlobalMachineViewer() {
         } else {
             setWorkbenchTab(prev => prev === 'artifact' ? 'machine' : prev);
         }
-    }, [activeArtifact]);
+    }, [activeArtifact, setWorkbenchTab]);
 
     const [highlightedTargets, setHighlightedTargets] = useState<string[]>([]);
     const [drawPath,           setDrawPath]           = useState(false);

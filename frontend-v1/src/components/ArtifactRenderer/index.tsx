@@ -189,7 +189,7 @@ function ArtifactRenderer({
     try { params = JSON.parse(code); } catch { /* use empty params */ }
 
     return (
-      <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full ${fillHeight ? 'flex flex-col h-full' : ''}`}>
+      <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full animate-fade-in ${fillHeight ? 'flex flex-col h-full' : ''}`}>
         <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
           <div className="flex items-center gap-2 min-w-0">
             <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
@@ -270,7 +270,7 @@ function ArtifactRenderer({
       ? MERMAID_HTML
       : SANDBOX_HTML;
   return (
-    <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full ${fillHeight ? 'flex flex-col h-full' : ''}`}>
+    <div className={`border border-background-subtle rounded-lg overflow-hidden bg-background shadow-sm w-full animate-fade-in ${fillHeight ? 'flex flex-col h-full' : ''}`}>
       <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-background-subtle bg-background-muted">
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-mono text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary text-white flex-shrink-0">
