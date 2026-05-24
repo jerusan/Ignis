@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+frontend-v1/
+eval/
+eval.py
+eval_report.py
+ingestion/
+files/
+node_modules/
+*.md
+*.webp
