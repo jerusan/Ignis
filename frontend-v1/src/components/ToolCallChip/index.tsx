@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from 'react';
+import React, { useState, type ComponentType } from 'react';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -123,4 +123,12 @@ function ToolCallChip({
     </div>);
 
 }
-export default ToolCallChip;
+export const MemoizedToolCallChip = React.memo(ToolCallChip, (prev, next) => (
+  prev.tool === next.tool &&
+  prev.status === next.status &&
+  prev.defaultOpen === next.defaultOpen &&
+  prev.result === next.result &&
+  JSON.stringify(prev.input) === JSON.stringify(next.input)
+));
+
+export default MemoizedToolCallChip;

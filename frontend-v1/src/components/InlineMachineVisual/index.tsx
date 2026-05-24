@@ -240,4 +240,11 @@ export function InlineMachineVisual({
   );
 }
 
-export default InlineMachineVisual;
+export const MemoizedInlineMachineVisual = React.memo(InlineMachineVisual, (prev, next) => (
+  prev.isCurrentStep === next.isCurrentStep &&
+  prev.stepLabel === next.stepLabel &&
+  JSON.stringify(prev.spatialContext) === JSON.stringify(next.spatialContext) &&
+  (typeof prev.onNextStep === 'function') === (typeof next.onNextStep === 'function')
+));
+
+export default MemoizedInlineMachineVisual;

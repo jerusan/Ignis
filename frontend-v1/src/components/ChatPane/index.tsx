@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { SendIcon, BookOpenIcon, ChevronDownIcon, WrenchIcon } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { SendIcon, WrenchIcon } from 'lucide-react';
 import Message from '../Message';
 import ToolCallChip from '../ToolCallChip';
 import ArtifactRenderer from '../ArtifactRenderer';
@@ -26,37 +24,7 @@ export type {
   ChatPaneProps,
 };
 
-function ReferenceImages({ images }: { images: ReferenceImage[] }) {
-  const [expanded, setExpanded] = useState(false);
-  if (images.length === 0) return null;
-  return (
-    <div className="mt-2 pt-2 border-t border-white/[0.04]">
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className="flex items-center gap-1.5 text-xs text-foreground-muted hover:text-foreground transition-colors py-1 px-2 rounded bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] shadow-sm cursor-pointer"
-        aria-expanded={expanded}
-      >
-        <BookOpenIcon className="w-3.5 h-3.5 text-primary/80" />
-        <span>References</span>
-        <ChevronDownIcon
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {expanded && (
-        <div className="mt-2 space-y-3 border-l border-white/[0.1] pl-3">
-          {images.map((img, i) => (
-            <figure key={i} className="space-y-1">
-              <AnnotatedImage src={img.url} alt={img.alt} bounds={img.bounds} />
-              {img.alt && (
-                <figcaption className="text-xs text-foreground-muted">{img.alt}</figcaption>
-              )}
-            </figure>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+
 
 function ArtifactBuilding({ type, title }: PendingArtifact) {
   const label = title ? `Building ${title}` : type ? `Building ${type} artifact` : 'Building artifact';
@@ -200,35 +168,12 @@ function ChatPane({
               <div key={m.id} className="space-y-2 animate-fade-in">
                 <Message
                   role={m.role}
-                  streaming={m.streaming && !displayText}
+                  text={m.text}
+                  displayText={displayText}
+                  streaming={m.streaming}
                   timestamp={m.timestamp}
-                >
-                  {m.role === 'assistant' ? (
-                    <div className="space-y-2">
-                      {displayText ? (
-                        <div className={`prose-ignis ${m.streaming ? 'is-streaming' : ''}`}>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {displayText}
-                          </ReactMarkdown>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-foreground-subtle py-1">
-                          <span className="text-sm font-medium">Working</span>
-                          <div className="flex gap-1">
-                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1 h-1 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }} />
-                          </div>
-                        </div>
-                      )}
-                      {referenceImages.length > 0 && (
-                        <ReferenceImages images={referenceImages} />
-                      )}
-                    </div>
-                  ) : (
-                    m.text
-                  )}
-                </Message>
+                  referenceImages={referenceImages}
+                />
 
                 {/* Tool call chips */}
                 {m.role === 'assistant' &&

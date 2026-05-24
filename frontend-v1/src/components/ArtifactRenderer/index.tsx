@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -396,4 +396,6 @@ function ArtifactRenderer({
     </div>);
 
 }
-export default ArtifactRenderer;
+export const MemoizedArtifactRenderer = React.memo(ArtifactRenderer);
+
+export default MemoizedArtifactRenderer;
