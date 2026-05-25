@@ -8,6 +8,8 @@ Endpoints:
 """
 
 import json
+import os
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -33,8 +35,16 @@ app.add_middleware(
 
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+    
+use_cache = os.environ.get("ENABLE_CANNED_CACHE", "").lower() in ("true", "1")
 
+RED = "\033[91m"
+RESET = "\033[0m"
 
+if use_cache:
+    print(f"{RED}[warning] Canned cache is enabled. Not recommended for production.{RESET}")
+else:
+    print("[cache] Canned cache is disabled")
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
 class Message(BaseModel):

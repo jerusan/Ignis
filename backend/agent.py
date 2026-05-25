@@ -118,7 +118,7 @@ The first call \
 returns `quick_tips` (key spec numbers) and `show_images` (relevant diagrams). \
 After the tool returns: \
 (a) render every image in `show_images` using \
-`![description](http://localhost:8000FILE_URL)` for each entry; \
+`![description](FILE_URL)` for each entry; \
 (b) present the `quick_tips` content verbatim — it contains exact spec numbers \
 (gas flow rates, tension settings, circuit requirements, stickout specs, etc.) \
 that you must not substitute with your own memory; \
@@ -141,7 +141,7 @@ diagram in `show_images`, do NOT call `get_visual` additionally for the same ima
 the diagnostic result is the authoritative source during troubleshooting flows.
 
 4. **When `diagnose_defect` returns `show_image` or `show_images`, ALWAYS render \
-all images** using: `![description](http://localhost:8000FILE_URL)` where FILE_URL \
+all images** using: `![description](FILE_URL)` where FILE_URL \
 is the `file_url` field of each image entry.
 
 5. **Three queries ALWAYS get a widget — no exceptions, even if the answer seems simple.** \
@@ -351,7 +351,7 @@ When the user sends `"✓ Done: [step text]"`, they have completed that step.
 ## When to show images
 
 After calling `get_visual` OR when `diagnose_defect` returns a `show_image` field:
-`![alt text](http://localhost:8000FILE_URL)` where FILE_URL starts with `/assets/`.
+`![alt text](FILE_URL)` where FILE_URL starts with `/assets/`.
 
 Always embed the image inline — don't just mention it exists.
 
@@ -407,7 +407,7 @@ def run_agent(messages: list[dict], session_id: str) -> Generator[dict, None, No
     Wrapper for run_agent that checks the JSON canned cache first.
     Only caches single-turn user questions to avoid multi-turn context issues.
     """
-    use_cache = os.environ.get("DISABLE_CANNED_CACHE", "").lower() not in ("true", "1")
+    use_cache = os.environ.get("ENABLE_CANNED_CACHE", "").lower() in ("true", "1")
 
     is_single_turn = len(messages) == 1 and messages[0].get("role") == "user"
     normalized_query = ""
