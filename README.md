@@ -1,5 +1,6 @@
 # Ignis — Multimodal AI Workbench for the Vulcan OmniPro 220
-
+![Front](media/front.png)
+![Side](media/side.png)
 [Watch the walkthrough →](https://vimeo.com/1195215908)
 
 > 📖 **Deep Dive:** For a complete architectural breakdown, data structures, and evaluation rubric details, see the [Technical Write-up](Project-details.md).
@@ -52,7 +53,7 @@ The PDF is pre-extracted into structured JSON and markdown rather than queried r
 |---|---|---|
 | Hard specs | `specs.json` | Numeric tables — duty cycles, current ranges, schema-constrained to block hallucinations on safety-critical values |
 | Decision trees | `diagnostic_graph.json` | Troubleshooting matrices converted to a traversable yes/no graph |
-| Visual registry | `visual_registry.json` + `frontend-v1/src/components/SpatialViewport/registryData.ts` | Named visual queries resolved by the backend; pixel coordinates for each part defined in the frontend |
+| Visual registry | `visual_registry.json` | Description of each page |
 | Procedural guides | `chunks/*.md` | Step-by-step guides parsed via PyMuPDF + Claude, retaining strict tabular data integrity |
 
 At runtime, `search_manual` applies a process-aware boost when ranking chunks: if the session state shows the user is on MIG, wire feed and spool install chunks rank higher automatically — no manual section routing required.
